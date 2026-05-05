@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Defense — Realm's Last Stand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20260505">
+</head>
+<body>
+<div id="app-shell">
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  START SCREEN                                       -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="start-screen" class="screen screen-start is-active" aria-hidden="false">
+        <div class="screen-orb screen-orb-1"></div>
+        <div class="screen-orb screen-orb-2"></div>
+        <div class="start-panel">
+            <p class="screen-kicker">Tower Defense</p>
+            <h1>Realm's Last Stand</h1>
+            <p class="screen-copy">Choose a battlefield, defend the realm, and survive four escalating maps.</p>
+            <div class="start-actions">
+                <button class="btn btn-primary btn-xl" id="btn-start-game" data-action="start-game">Start Game</button>
+            </div>
+            <p class="screen-footnote">Progress unlocks the next level after every victory.</p>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  LEVEL SELECT SCREEN                                -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <section id="level-screen" class="screen screen-level" aria-hidden="true">
+        <div class="screen-shell">
+            <div class="screen-topbar">
+                <button class="btn btn-ghost" id="btn-level-back" data-action="back-start">Back</button>
+                <div class="screen-heading">
+                    <p class="screen-kicker">Campaign</p>
+                    <h2>Select Level</h2>
+                </div>
+                <div class="screen-status" data-level-status>Unlocked: 1 / 4</div>
+            </div>
+
+            <div id="level-grid" class="level-grid"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!--  MAIN GAME CONTAINER                                -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="game-container" class="screen game-screen" aria-hidden="true">
+
+        <!-- Top HUD -->
+        <header class="hud">
+            <div class="hud-left">
+                <span class="hud-badge">⚔️ <span id="hud-title">Realm's Last Stand</span></span>
+            </div>
+            <div class="hud-center">
+                <div class="stat-chip" title="Player Health">
+                    <span class="stat-icon">❤️</span>
+                    <span id="hud-hp">20</span>
+                </div>
+                <div class="stat-chip" title="Gold">
+                    <span class="stat-icon">🪙</span>
+                    <span id="hud-gold">150</span>
+                </div>
+                <div class="stat-chip" title="Current Wave">
+                    <span class="stat-icon">🌊</span>
+                    <span id="hud-wave">1 / 10</span>
+                </div>
+                <div class="stat-chip" title="Score">
+                    <span class="stat-icon">⭐</span>
+                    <span id="hud-score">0</span>
+                </div>
+            </div>
+            <div class="hud-right">
+                <button class="btn btn-hud" id="btn-save" title="Save Game">💾 Save</button>
+                <button class="btn btn-hud" id="btn-load" title="Load Game">📂 Load</button>
+                <button class="btn btn-hud" id="btn-back-levels" title="Back to Levels">↩ Levels</button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="game-layout">
+
+            <!-- Left Panel — Tower Shop -->
+            <aside class="panel panel-left">
+                <h2 class="panel-title">Tower Shop</h2>
+                <div id="tower-shop" class="tower-list">
+                    <!-- Populated by JS from catalog API -->
+                </div>
+
+                <div class="panel-divider"></div>
+
+                <h2 class="panel-title">Selected Tower</h2>
+                <div id="tower-info" class="tower-info-box">
+                    <p class="muted">Click a placed tower to inspect it.</p>
+                </div>
+            </aside>
+
+            <!-- Center — Canvas + Controls -->
+            <section class="canvas-section">
+                <div class="canvas-wrapper">
+                    <canvas id="game-canvas" width="800" height="560"></canvas>
+
+                    <!-- Overlays rendered on top of canvas -->
+                    <div id="wave-announcement" class="wave-announcement hidden">
+                        <span id="wave-text">Wave 1</span>
+                    </div>
+                </div>
+
+                <!-- Game Controls -->
+                <div class="controls-bar">
+                    <button class="btn btn-control" id="btn-start">▶ Start Game</button>
+                    <button class="btn btn-control hidden" id="btn-pause">⏸ Pause</button>
+                    <button class="btn btn-control hidden" id="btn-resume">▶ Resume</button>
+                    <button class="btn btn-control hidden" id="btn-next-wave">⏭ Next Wave</button>
+                    <button class="btn btn-control" id="btn-restart">↺ Restart</button>
+                    <div class="speed-group">
+                        <span>Speed:</span>
+                        <button class="speed-btn active" data-speed="1">1×</button>
+                        <button class="speed-btn" data-speed="2">2×</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel — Wave Info & Log -->
+            <aside class="panel panel-right">
+                <h2 class="panel-title">Wave Intel</h2>
+                <div id="wave-info" class="wave-info-box">
+                    <p class="muted">Game not started.</p>
+                </div>
+
+                <div class="panel-divider"></div>
+
+                <h2 class="panel-title">Combat Log</h2>
+                <div id="combat-log" class="combat-log">
+                    <p class="muted">Awaiting battle...</p>
+                </div>
+            </aside>
+
+        </main>
+    </div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  END GAME MODAL                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="end-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div id="end-icon" class="end-icon">🏆</div>
+        <h2 id="end-title">Victory!</h2>
+        <p id="end-message">You defended the realm!</p>
+        <div class="end-stats">
+            <div class="end-stat"><span>Final Wave</span><strong id="end-wave">—</strong></div>
+            <div class="end-stat"><span>Score</span><strong id="end-score">—</strong></div>
+            <div class="end-stat"><span>HP Remaining</span><strong id="end-hp">—</strong></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-primary" id="btn-play-again">Play Again</button>
+            <button class="btn btn-ghost" id="btn-back-levels-modal">Back to Levels</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SAVE/LOAD MODAL                                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="save-load-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2 id="saveload-title">Save Game</h2>
+        <div id="save-slots" class="save-slots"></div>
+        <div id="save-form" class="save-form hidden">
+            <input type="text" id="save-name-input" placeholder="Save slot name…" maxlength="50">
+            <button class="btn btn-primary" id="btn-confirm-save">Save</button>
+        </div>
+        <button class="btn btn-ghost btn-full" id="btn-close-saveload">Cancel</button>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  SCRIPTS                                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script src="js/api/ApiClient.js?v=20260505"></script>
+<script src="js/Constants.js?v=20260505"></script>
+<script src="js/data/maps.js?v=20260505"></script>
+<script src="js/engine/EventBus.js?v=20260505"></script>
+<script src="js/engine/LevelData.js?v=20260505"></script>
+<script src="js/entities/Enemy.js?v=20260505"></script>
+<script src="js/entities/Projectile.js?v=20260505"></script>
+<script src="js/entities/Tower.js?v=20260505"></script>
+<script src="js/engine/WaveManager.js?v=20260505"></script>
+<script src="js/engine/LevelManager.js?v=20260505"></script>
+<script src="js/components/ScreenManager.js?v=20260505"></script>
+<script src="js/screens/StartScreen.js?v=20260505"></script>
+<script src="js/screens/LevelSelectScreen.js?v=20260505"></script>
+<script src="js/screens/GameScreen.js?v=20260505"></script>
+<script src="js/engine/GameManager.js?v=20260505"></script>
+<script src="js/ui/UIManager.js?v=20260505"></script>
+<script src="js/main.js?v=20260505"></script>
+</body>
+</html>

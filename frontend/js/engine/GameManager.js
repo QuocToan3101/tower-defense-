@@ -1,0 +1,531 @@
+/**
+ * GameManager.js
+ * Orchestrates gameplay, rendering, input, and UI sync.
+ */
+class GameManager {
+    constructor(apiClient, uiManager, navigation = {}) {
+        this.api = apiClient;
+        this.ui = uiManager;
+        this.navigation = navigation;
+        this.onLevelCompleted = navigation.onLevelCompleted ?? null;
+
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+
+        this.level = null;
+        this.levelManager = null;
+        this.waveManager = null;
+
+        this.projectiles = [];
+        this.selectedTowerType = null;
+        this.selectedTower = null;
+        this.hoverCell = null;
+        this.currentLevelId = null;
+
+        this.playerHp = CONSTANTS.STARTING_HP;
+        this.gold = CONSTANTS.STARTING_GOLD;
+        this.score = 0;
+        this.gameStarted = false;
+        this.isPaused = false;
+        this.isGameOver = false;
+        this.gameSpeed = 1;
+
+        this.lastTime = performance.now();
+        this.loopBound = this.loop.bind(this);
+
+        this.towerCatalog = [];
+        this.enemyCatalog = [];
+
+        this.bindEvents();
+        this.bindControls();
+        this.bindCanvasInput();
+        this.updateHUD();
+        this.log('Welcome commander. Pick a tower and prepare your defenses.');
+    }
+
+    async bootstrap() {
+        await this.loadCatalogs();
+    }
+
+    async loadCatalogs() {
+        const fallbackTowers = [
+            { type: 'ARCHER', name: 'Archer Tower', baseCost: 50, baseDamage: 15, baseRange: 120, baseFireRate: 1.2, upgradeCost: 40, sellRatio: 0.6 },
+            { type: 'CANNON', name: 'Cannon Tower', baseCost: 100, baseDamage: 50, baseRange: 100, baseFireRate: 0.5, upgradeCost: 75, sellRatio: 0.6 },
+            { type: 'MAGE', name: 'Mage Tower', baseCost: 120, baseDamage: 30, baseRange: 140, baseFireRate: 0.8, upgradeCost: 90, sellRatio: 0.6 },
+            { type: 'ICE', name: 'Ice Tower', baseCost: 80, baseDamage: 8, baseRange: 110, baseFireRate: 1.0, upgradeCost: 60, sellRatio: 0.6 },
+            { type: 'FLAME', name: 'Flame Tower', baseCost: 90, baseDamage: 20, baseRange: 90, baseFireRate: 1.5, upgradeCost: 70, sellRatio: 0.6 }
+        ];
+        const fallbackEnemies = [
+            { type: 'GOBLIN', name: 'Goblin', baseHp: 60, baseSpeed: 2.5, goldReward: 10, damageToPlayer: 1, armor: 0.0 },
+            { type: 'ORC', name: 'Orc', baseHp: 200, baseSpeed: 1.2, goldReward: 20, damageToPlayer: 2, armor: 0.15 },
+            { type: 'TROLL', name: 'Troll', baseHp: 400, baseSpeed: 0.8, goldReward: 35, damageToPlayer: 3, armor: 0.25 },
+            { type: 'WOLF', name: 'Wolf', baseHp: 80, baseSpeed: 3.5, goldReward: 15, damageToPlayer: 1, armor: 0.05 },
+            { type: 'DRAGON', name: 'Dragon', baseHp: 1200, baseSpeed: 1.0, goldReward: 80, damageToPlayer: 5, armor: 0.4 }
+        ];
+
+        try {
+            const [towersRes, enemiesRes] = await Promise.all([
+                this.api.getTowers(),
+                this.api.getEnemies()
+            ]);
+            this.towerCatalog = towersRes?.data?.length ? towersRes.data : fallbackTowers;
+            this.enemyCatalog = enemiesRes?.data?.length ? enemiesRes.data : fallbackEnemies;
+        } catch (err) {
+            console.warn('Catalog fetch failed, using fallback data:', err.message);
+            this.towerCatalog = fallbackTowers;
+            this.enemyCatalog = fallbackEnemies;
+        }
+
+        this.renderTowerShop();
+    }
+
+    setupLevel(levelId) {
+        this.level = getLevelById(levelId);
+        this.currentLevelId = levelId;
+        this.levelManager = new LevelManager(this.level, this.towerCatalog);
+        this.waveManager = new WaveManager(this.level, this.enemyCatalog);
+        this.projectiles = [];
+        this.selectedTower = null;
+        this.selectedTowerType = null;
+        this.hoverCell = null;
+
+        this.playerHp = CONSTANTS.STARTING_HP;
+        this.gold = CONSTANTS.STARTING_GOLD;
+        this.score = 0;
+        this.gameStarted = false;
+        this.isPaused = false;
+        this.isGameOver = false;
+        this.gameSpeed = 1;
+
+        this.ui.setLevelTitle(`Realm's Last Stand - ${this.level.name}`);
+
+        this.resetControlVisibility();
+        this.updateWaveInfo('Game not started. Press Start to begin wave 1.');
+        this.updateHUD();
+    }
+
+    bindEvents() {
+        eventBus.on('enemy:killed', (enemy) => {
+            this.gold += enemy.goldReward;
+            this.score += enemy.goldReward * 10;
+            this.updateHUD();
+        });
+
+        eventBus.on('enemy:reached', (enemy) => {
+            this.playerHp -= enemy.damageToPlayer;
+            this.updateHUD();
+            this.log(`${enemy.name} breached the gate. -${enemy.damageToPlayer} HP`);
+            if (this.playerHp <= 0) {
+                this.playerHp = 0;
+                this.gameOver(false);
+            }
+        });
+
+        eventBus.on('wave:started', (wave) => {
+            this.updateHUD();
+            this.updateWaveInfo(`Wave ${wave} has begun. Hold the line.`);
+            this.showWaveAnnouncement(`Wave ${wave}`);
+            this.log(`Wave ${wave} started.`);
+            document.getElementById('btn-next-wave').classList.add('hidden');
+        });
+
+        eventBus.on('wave:complete', (wave) => {
+            this.gold += CONSTANTS.GOLD_PER_WAVE;
+            this.updateHUD();
+            this.log(`Wave ${wave} complete. +${CONSTANTS.GOLD_PER_WAVE} bonus gold.`);
+
+            if (this.waveManager.isFinalWave) {
+                this.gameOver(true);
+                return;
+            }
+
+            this.updateWaveInfo(`Wave ${wave} cleared. Click Next Wave to continue.`);
+            document.getElementById('btn-next-wave').classList.remove('hidden');
+        });
+    }
+
+    bindControls() {
+        document.getElementById('btn-start').addEventListener('click', () => {
+            if (this.gameStarted || this.isGameOver) return;
+            this.gameStarted = true;
+            document.getElementById('btn-start').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+            this.startNextWave();
+            this.lastTime = performance.now();
+            requestAnimationFrame(this.loopBound);
+        });
+
+        document.getElementById('btn-next-wave').addEventListener('click', () => {
+            if (this.isPaused || this.isGameOver || this.waveManager.waveActive) return;
+            this.startNextWave();
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            if (!this.gameStarted || this.isGameOver) return;
+            this.isPaused = true;
+            document.getElementById('btn-pause').classList.add('hidden');
+            document.getElementById('btn-resume').classList.remove('hidden');
+            this.updateWaveInfo('Paused. Press Resume to continue.');
+        });
+
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            if (!this.gameStarted || this.isGameOver) return;
+            this.isPaused = false;
+            document.getElementById('btn-resume').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+            this.lastTime = performance.now();
+            requestAnimationFrame(this.loopBound);
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            const levelId = this.currentLevelId ?? 1;
+            this.setupLevel(levelId);
+            this.renderStatic();
+            this.log('Game restarted. Ready for a new defense.');
+        });
+
+        const backButton = document.getElementById('btn-back-levels');
+        backButton?.addEventListener('click', () => {
+            if (!this.isGameOver && this.gameStarted && !confirm('Leave this run and return to level select?')) {
+                return;
+            }
+            document.getElementById('end-modal').classList.add('hidden');
+            this.navigation.goToLevelSelect?.();
+        });
+
+        const modalBackButton = document.getElementById('btn-back-levels-modal');
+        modalBackButton?.addEventListener('click', () => {
+            document.getElementById('end-modal').classList.add('hidden');
+            this.navigation.goToLevelSelect?.();
+        });
+
+        const playAgainButton = document.getElementById('btn-play-again');
+        playAgainButton?.addEventListener('click', () => {
+            const levelId = this.currentLevelId ?? 1;
+            this.setupLevel(levelId);
+            this.renderStatic();
+            document.getElementById('end-modal').classList.add('hidden');
+            this.log('Run restarted.');
+        });
+
+        document.querySelectorAll('.speed-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                this.gameSpeed = Number(btn.dataset.speed || 1);
+                document.querySelectorAll('.speed-btn').forEach((b) => b.classList.toggle('active', b === btn));
+            });
+        });
+    }
+
+    bindCanvasInput() {
+        this.canvas.addEventListener('mousemove', (e) => {
+            const cell = this.mouseToCell(e);
+            if (!cell) {
+                this.hoverCell = null;
+                return;
+            }
+            this.hoverCell = cell;
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            this.hoverCell = null;
+        });
+
+        this.canvas.addEventListener('click', (e) => {
+            if (this.isGameOver || !this.levelManager) return;
+            const cell = this.mouseToCell(e);
+            if (!cell) return;
+
+            const { col, row } = cell;
+
+            if (this.selectedTowerType) {
+                const def = this.towerCatalog.find((t) => t.type === this.selectedTowerType);
+                if (!def) return;
+                if (this.gold < def.baseCost) {
+                    this.log('Not enough gold for this tower.');
+                    return;
+                }
+
+                const tower = this.levelManager.placeTower(this.selectedTowerType, col, row);
+                if (!tower) {
+                    this.log('Cannot build on that tile.');
+                    return;
+                }
+
+                this.gold -= def.baseCost;
+                this.updateHUD();
+                this.log(`${tower.name} built at (${col}, ${row}).`);
+                this.selectedTower = tower;
+                this.showSelectedTowerInfo();
+            } else {
+                this.selectedTower = this.levelManager.towerAt(col, row);
+                this.showSelectedTowerInfo();
+            }
+        });
+    }
+
+    startNextWave() {
+        if (this.waveManager.isFinalWave && this.waveManager.currentWave > 0) return;
+        this.waveManager.startNextWave();
+    }
+
+    loop(now) {
+        if (this.isPaused || this.isGameOver) {
+            this.renderFrame();
+            return;
+        }
+
+        const dt = Math.min((now - this.lastTime) / 1000, 0.1) * this.gameSpeed;
+        this.lastTime = now;
+
+        this.update(dt);
+        this.renderFrame();
+        this.updateHUD();
+
+        requestAnimationFrame(this.loopBound);
+    }
+
+    update(dt) {
+        this.waveManager.update(dt);
+
+        const newShots = this.levelManager.update(this.waveManager.aliveEnemies, dt);
+        if (newShots.length) this.projectiles.push(...newShots);
+
+        for (const p of this.projectiles) p.update(dt);
+        this.projectiles = this.projectiles.filter((p) => p.alive);
+    }
+
+    renderStatic() {
+        this.renderFrame();
+    }
+
+    renderFrame() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.levelManager.render(this.ctx);
+        this.waveManager.render(this.ctx);
+        for (const p of this.projectiles) p.render(this.ctx);
+
+        if (this.hoverCell && this.selectedTowerType) {
+            const valid = this.levelManager.isBuildable(this.hoverCell.col, this.hoverCell.row);
+            this.levelManager.renderHoverCell(this.ctx, this.hoverCell.col, this.hoverCell.row, valid);
+        }
+
+        this.highlightSelectedTower();
+    }
+
+    highlightSelectedTower() {
+        for (const t of this.levelManager.towers) t.selected = (t === this.selectedTower);
+    }
+
+    mouseToCell(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const col = Math.floor(x / CONSTANTS.CELL_SIZE);
+        const row = Math.floor(y / CONSTANTS.CELL_SIZE);
+
+        if (col < 0 || row < 0 || col >= CONSTANTS.GRID_COLS || row >= CONSTANTS.GRID_ROWS) {
+            return null;
+        }
+        return { col, row };
+    }
+
+    renderTowerShop() {
+        const box = document.getElementById('tower-shop');
+        box.innerHTML = '';
+
+        this.towerCatalog.forEach((tower) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-ghost btn-full';
+            btn.textContent = `${tower.name} - ${tower.baseCost}g`;
+            btn.addEventListener('click', () => {
+                this.selectedTowerType = tower.type;
+                this.selectedTower = null;
+                this.showSelectedTowerInfo(`Building mode: ${tower.name}`);
+            });
+            box.appendChild(btn);
+        });
+    }
+
+    showSelectedTowerInfo(prefix) {
+        const panel = document.getElementById('tower-info');
+        if (this.selectedTower) {
+            const upgradeDisabled = !this.selectedTower.canUpgrade ? 'disabled' : '';
+            const upgradeBtnClass = !this.selectedTower.canUpgrade ? 'btn-disabled' : 'btn-primary';
+            const nextUpgradeCost = this.selectedTower.nextUpgradeCost;
+            const goldEnough = this.gold >= nextUpgradeCost ? '' : 'disabled';
+            const goldEnoughClass = this.gold >= nextUpgradeCost ? 'btn-success' : 'btn-disabled';
+
+            panel.innerHTML = `
+                <p><strong>${this.selectedTower.name}</strong></p>
+                <p>Level: ${this.selectedTower.level}</p>
+                <p>Damage: ${this.selectedTower.damage}</p>
+                <p>Range: ${Math.round(this.selectedTower.range)}</p>
+                <p>Sell Value: ${this.selectedTower.sellValue}g</p>
+                <div class="tower-actions">
+                    <button id="btn-upgrade" class="${upgradeBtnClass}" ${upgradeDisabled}>
+                        Upgrade (${nextUpgradeCost}g)
+                    </button>
+                    <button id="btn-delete" class="btn-danger">
+                        Sell (${this.selectedTower.sellValue}g)
+                    </button>
+                </div>
+            `;
+
+            // Attach event listeners
+            const upgradeBtnEl = document.getElementById('btn-upgrade');
+            const deleteBtnEl = document.getElementById('btn-delete');
+
+            if (upgradeBtnEl && !upgradeDisabled) {
+                upgradeBtnEl.addEventListener('click', () => this.upgradeTower());
+            }
+
+            if (deleteBtnEl) {
+                deleteBtnEl.addEventListener('click', () => this.deleteTower());
+            }
+            return;
+        }
+
+        if (prefix) {
+            panel.innerHTML = `<p>${prefix}</p><p class="muted">Click on grass tile to place tower.</p>`;
+        } else {
+            panel.innerHTML = '<p class="muted">Click a placed tower to inspect it.</p>';
+        }
+    }
+
+    /**
+     * Handle tower upgrade button click.
+     * Calls backend API to upgrade tower.
+     */
+    async upgradeTower() {
+        if (!this.selectedTower) return;
+        if (this.selectedTower.level >= CONSTANTS.MAX_TOWER_LEVEL) {
+            this.log('Tower already at max level.');
+            return;
+        }
+
+        const cost = this.selectedTower.nextUpgradeCost;
+        if (this.gold < cost) {
+            this.log(`Not enough gold to upgrade. Need ${cost}g, have ${this.gold}g.`);
+            return;
+        }
+
+        try {
+            this.log(`Upgrading ${this.selectedTower.name}...`);
+            
+            // Find catalog tower ID
+            const catalogTower = this.towerCatalog.find((t) => t.type === this.selectedTower.type);
+            if (!catalogTower) throw new Error('Tower definition not found');
+
+            // Call API
+            const upgradedData = await this.selectedTower.upgradeAsync(catalogTower.id);
+            
+            // Deduct cost
+            this.gold -= cost;
+            this.updateHUD();
+            
+            this.log(`${this.selectedTower.name} upgraded to level ${upgradedData.newLevel}!`);
+            this.showSelectedTowerInfo();
+        } catch (err) {
+            this.log(`Upgrade failed: ${err.message}`);
+            console.error('Upgrade error:', err);
+        }
+    }
+
+    /**
+     * Handle tower delete button click.
+     * Calls backend API to delete/sell tower.
+     */
+    async deleteTower() {
+        if (!this.selectedTower) return;
+
+        try {
+            this.log(`Selling ${this.selectedTower.name}...`);
+            
+            // Find catalog tower ID
+            const catalogTower = this.towerCatalog.find((t) => t.type === this.selectedTower.type);
+            if (!catalogTower) throw new Error('Tower definition not found');
+
+            // Call API
+            const deletedData = await this.selectedTower.deleteAsync(catalogTower.id);
+            
+            // Add refund
+            this.gold += deletedData.goldRefunded;
+            this.updateHUD();
+            
+            // Remove from level
+            this.levelManager.removeTower(this.selectedTower);
+            
+            this.log(`${this.selectedTower.name} sold for ${deletedData.goldRefunded}g!`);
+            this.selectedTower = null;
+            this.showSelectedTowerInfo();
+        } catch (err) {
+            this.log(`Sale failed: ${err.message}`);
+            console.error('Delete error:', err);
+        }
+    }
+
+    showWaveAnnouncement(text) {
+        const wrap = document.getElementById('wave-announcement');
+        const t = document.getElementById('wave-text');
+        t.textContent = text;
+        wrap.classList.remove('hidden');
+        setTimeout(() => wrap.classList.add('hidden'), 1400);
+    }
+
+    updateWaveInfo(text) {
+        const box = document.getElementById('wave-info');
+        box.innerHTML = `<p>${text}</p>`;
+    }
+
+    log(msg) {
+        const box = document.getElementById('combat-log');
+        const p = document.createElement('p');
+        p.textContent = msg;
+        box.prepend(p);
+
+        while (box.childElementCount > 10) {
+            box.removeChild(box.lastElementChild);
+        }
+    }
+
+    updateHUD() {
+        const wave = this.waveManager ? this.waveManager.currentWave : 0;
+        const maxWaves = this.level ? this.level.totalWaves : 10;
+        this.ui.updateHUD(this.playerHp, this.gold, wave, maxWaves, this.score);
+    }
+
+    gameOver(victory) {
+        this.isGameOver = true;
+        this.isPaused = false;
+
+        if (victory && this.currentLevelId) {
+            this.onLevelCompleted?.(this.currentLevelId);
+        }
+
+        const title = document.getElementById('end-title');
+        const message = document.getElementById('end-message');
+        const icon = document.getElementById('end-icon');
+        const wave = document.getElementById('end-wave');
+        const score = document.getElementById('end-score');
+        const hp = document.getElementById('end-hp');
+
+        title.textContent = victory ? 'Victory!' : 'Defeat';
+        message.textContent = victory ? 'You defended the realm!' : 'The realm has fallen...';
+        icon.textContent = victory ? '🏆' : '💀';
+        wave.textContent = `${this.waveManager.currentWave}`;
+        score.textContent = `${this.score}`;
+        hp.textContent = `${this.playerHp}`;
+
+        document.getElementById('end-modal').classList.remove('hidden');
+        this.updateWaveInfo(victory ? 'All waves cleared.' : 'Your keep was overrun.');
+        this.log(victory ? 'Final wave defeated.' : 'Game over.');
+    }
+
+    resetControlVisibility() {
+        document.getElementById('btn-start').classList.remove('hidden');
+        document.getElementById('btn-pause').classList.add('hidden');
+        document.getElementById('btn-resume').classList.add('hidden');
+        document.getElementById('btn-next-wave').classList.add('hidden');
+        document.getElementById('end-modal').classList.add('hidden');
+    }
+}
