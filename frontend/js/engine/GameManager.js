@@ -236,6 +236,15 @@ class GameManager {
             if (!cell) return;
 
             const { col, row } = cell;
+            const towerOnCell = this.levelManager.towerAt(col, row);
+
+            // Always allow selecting an existing tower, even during build mode.
+            if (towerOnCell) {
+                this.selectedTower = towerOnCell;
+                this.selectedTowerType = null;
+                this.showSelectedTowerInfo();
+                return;
+            }
 
             if (this.selectedTowerType) {
                 const def = this.towerCatalog.find((t) => t.type === this.selectedTowerType);
@@ -257,7 +266,7 @@ class GameManager {
                 this.selectedTower = tower;
                 this.showSelectedTowerInfo();
             } else {
-                this.selectedTower = this.levelManager.towerAt(col, row);
+                this.selectedTower = null;
                 this.showSelectedTowerInfo();
             }
         });
