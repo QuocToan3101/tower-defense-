@@ -50,17 +50,17 @@ A standalone offline tower defense game built with **Electron** and **vanilla Ja
 
 ### Option 1: Installer (Recommended)
 
-1. **Download** `Tower Defense Setup 0.1.0.exe` from the releases folder
+1. **Download** `Tower Defense-0.1.0-x64.exe` from the build output folder
 2. **Double-click** the installer
 3. **Follow the installation wizard**
 4. **Launch** the game from your Start Menu or Desktop shortcut
 5. **Enjoy!** 🎮
 
-If you are working from this repository, the latest installer is generated at `electron/dist/Tower Defense Setup 0.1.0.exe`.
+If you are working from this repository, the latest installer is generated at `dist/Tower Defense-0.1.0-x64.exe`.
 
 ### Option 2: Portable Version
 
-1. **Extract** the `win-unpacked` folder to any location
+1. **Extract** the `win-unpacked` folder from `dist/win-unpacked` to any location
 2. **Navigate** to the extracted folder
 3. **Double-click** `Tower Defense.exe`
 4. **Game starts immediately** (no installation needed)
@@ -82,7 +82,10 @@ npm install
 npm start
 
 # Or build installer
-npm run dist
+npm run dist:win
+
+# Or build portable version
+npm run dist:portable
 ```
 
 ---
