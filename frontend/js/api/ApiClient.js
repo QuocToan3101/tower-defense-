@@ -12,57 +12,6 @@ class ApiClient {
         this.isOffline = true; // Always offline mode
     }
 
-    // ─── Token Management ──────────────────────────────────
-
-    setAuth(token, userId, username) {
-        this.token    = token;
-        this.userId   = userId;
-        this.username = username;
-        localStorage.setItem('td_token',    token);
-        localStorage.setItem('td_userId',   userId);
-        localStorage.setItem('td_username', username);
-    }
-
-    clearAuth() {
-        this.token    = null;
-        this.userId   = null;
-        this.username = null;
-        localStorage.removeItem('td_token');
-        localStorage.removeItem('td_userId');
-        localStorage.removeItem('td_username');
-    }
-
-    isAuthenticated() {
-        return !!this.token;
-    }
-
-    // ─── Core Request ──────────────────────────────────────
-    // In offline mode, no actual HTTP requests are made.
-    // All data is stored/retrieved from localStorage.
-
-    async request(method, path, body = null, requiresAuth = true) {
-        // Offline mode - no HTTP requests
-        console.log(`[API-OFFLINE] ${method} ${path}`);
-        return { success: true, data: null };
-    }
-
-    // ─── Auth Endpoints ────────────────────────────────────
-
-    async register(username, email, password) {
-        this.setAuth('offline-token', '1', username);
-        return { success: true, data: { token: 'offline-token', userId: '1', username } };
-    }
-
-    async login(username, password) {
-        this.setAuth('offline-token', '1', username);
-        return { success: true, data: { token: 'offline-token', userId: '1', username } };
-    }
-
-    async loginAsGuest() {
-        this.setAuth('offline-token', '1', 'Guest');
-        return { success: true, data: { token: 'offline-token', userId: '1', username: 'Guest' } };
-    }
-
     // ─── Catalog Endpoints (public) ─────────────────────────
 
     async getTowers() {
@@ -76,14 +25,6 @@ class ApiClient {
     // ─── Tower Management Endpoints ────────────────────────
     // In offline mode, tower management is handled by frontend logic
     // API calls just return success for compatibility
-
-    async upgradeTower(towerId, currentLevel) {
-        return { success: true, data: { upgraded: true } };
-    }
-
-    async deleteTower(towerId, level) {
-        return { success: true, data: { deleted: true } };
-    }
 
     // ─── Save/Load Endpoints ──────────────────────────────
     // All saves stored in localStorage as JSON array
