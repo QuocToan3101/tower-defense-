@@ -5,7 +5,7 @@
 class WaveManager {
     /**
      * @param {object}   levelData    - Level definition (grid, waypoints, totalWaves)
-     * @param {object[]} enemyCatalog - Enemy definitions from backend/catalog
+     * @param {object[]} enemyCatalog - Enemy definitions from catalog
      */
     constructor(levelData, enemyCatalog) {
         this.waypoints    = levelData.waypoints;
@@ -133,6 +133,11 @@ const WAVE_COMPOSITIONS = Object.freeze([
     [2, [['GOBLIN', 10], ['ORC', 2]]],
     [3, [['GOBLIN', 8], ['ORC', 4]]],
     [4, [['GOBLIN', 6], ['ORC', 4], ['WOLF', 4]]],
+    // ✓ REBALANCED: Softer early waves for new player friendliness
+    [1, [['GOBLIN', 6]]],                    // was 8 - pure intro
+    [2, [['GOBLIN', 7], ['ORC', 1]]],        // was 10+2 - gentle Orc intro
+    [3, [['GOBLIN', 6], ['ORC', 2]]],        // was 8+4 - gradual difficulty
+    [4, [['GOBLIN', 5], ['ORC', 3], ['WOLF', 2]]],  // was 6+4+4 - fewer Wolves
     [5, [['GOBLIN', 8], ['WOLF', 6], ['ORC', 4]]],
     [6, [['ORC', 6], ['WOLF', 8], ['GOBLIN', 6]]],
     [7, [['ORC', 8], ['TROLL', 2], ['WOLF', 6]]],

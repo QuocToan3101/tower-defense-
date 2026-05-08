@@ -29,6 +29,7 @@ class GameManager {
         this.isPaused = false;
         this.isGameOver = false;
         this.gameSpeed = 1;
+        this.nextWaveTimer = null;
 
         this.lastTime = performance.now();
         this.loopBound = this.loop.bind(this);
@@ -84,6 +85,7 @@ class GameManager {
         this.currentLevelId = levelId;
         this.levelManager = new LevelManager(this.level, this.towerCatalog);
         this.waveManager = new WaveManager(this.level, this.enemyCatalog);
+        this.clearNextWaveTimer();
         this.projectiles = [];
         this.selectedTower = null;
         this.selectedTowerType = null;
@@ -139,8 +141,16 @@ class GameManager {
                 return;
             }
 
-            this.updateWaveInfo(`Wave ${wave} cleared. Click Next Wave to continue.`);
+            this.updateWaveInfo(`Wave ${wave} cleared. Next wave starts soon.`);
             document.getElementById('btn-next-wave').classList.remove('hidden');
+
+            this.clearNextWaveTimer();
+            this.nextWaveTimer = setTimeout(() => {
+                this.nextWaveTimer = null;
+                if (!this.isGameOver && this.gameStarted && !this.isPaused && !this.waveManager.waveActive) {
+                    this.startNextWave();
+                }
+            }, 1500);
         });
     }
 
@@ -157,6 +167,7 @@ class GameManager {
 
         document.getElementById('btn-next-wave').addEventListener('click', () => {
             if (this.isPaused || this.isGameOver || this.waveManager.waveActive) return;
+            this.clearNextWaveTimer();
             this.startNextWave();
         });
 
@@ -178,6 +189,7 @@ class GameManager {
         });
 
         document.getElementById('btn-restart').addEventListener('click', () => {
+            this.clearNextWaveTimer();
             const levelId = this.currentLevelId ?? 1;
             this.setupLevel(levelId);
             this.renderStatic();
@@ -201,6 +213,7 @@ class GameManager {
 
         const playAgainButton = document.getElementById('btn-play-again');
         playAgainButton?.addEventListener('click', () => {
+            this.clearNextWaveTimer();
             const levelId = this.currentLevelId ?? 1;
             this.setupLevel(levelId);
             this.renderStatic();
@@ -274,7 +287,15 @@ class GameManager {
 
     startNextWave() {
         if (this.waveManager.isFinalWave && this.waveManager.currentWave > 0) return;
+        this.clearNextWaveTimer();
         this.waveManager.startNextWave();
+    }
+
+    clearNextWaveTimer() {
+        if (this.nextWaveTimer) {
+            clearTimeout(this.nextWaveTimer);
+            this.nextWaveTimer = null;
+        }
     }
 
     loop(now) {
@@ -402,10 +423,9 @@ class GameManager {
     }
 
     /**
-     * Handle tower upgrade button click.
-     * Calls backend API to upgrade tower.
+     * Handle tower upgrade button click (local-only in offline mode).
      */
-    async upgradeTower() {
+    upgradeTower() {
         if (!this.selectedTower) return;
         if (this.selectedTower.level >= CONSTANTS.MAX_TOWER_LEVEL) {
             this.log('Tower already at max level.');
@@ -418,59 +438,29 @@ class GameManager {
             return;
         }
 
-        try {
-            this.log(`Upgrading ${this.selectedTower.name}...`);
-            
-            // Find catalog tower ID
-            const catalogTower = this.towerCatalog.find((t) => t.type === this.selectedTower.type);
-            if (!catalogTower) throw new Error('Tower definition not found');
-
-            // Call API
-            const upgradedData = await this.selectedTower.upgradeAsync(catalogTower.id);
-            
-            // Deduct cost
-            this.gold -= cost;
-            this.updateHUD();
-            
-            this.log(`${this.selectedTower.name} upgraded to level ${upgradedData.newLevel}!`);
-            this.showSelectedTowerInfo();
-        } catch (err) {
-            this.log(`Upgrade failed: ${err.message}`);
-            console.error('Upgrade error:', err);
-        }
+        this.selectedTower.upgrade();
+        this.gold -= cost;
+        this.updateHUD();
+        
+        this.log(`${this.selectedTower.name} upgraded to level ${this.selectedTower.level}!`);
+        this.showSelectedTowerInfo();
     }
 
     /**
-     * Handle tower delete button click.
-     * Calls backend API to delete/sell tower.
+     * Handle tower delete button click (local-only in offline mode).
      */
-    async deleteTower() {
+    deleteTower() {
         if (!this.selectedTower) return;
 
-        try {
-            this.log(`Selling ${this.selectedTower.name}...`);
-            
-            // Find catalog tower ID
-            const catalogTower = this.towerCatalog.find((t) => t.type === this.selectedTower.type);
-            if (!catalogTower) throw new Error('Tower definition not found');
-
-            // Call API
-            const deletedData = await this.selectedTower.deleteAsync(catalogTower.id);
-            
-            // Add refund
-            this.gold += deletedData.goldRefunded;
-            this.updateHUD();
-            
-            // Remove from level
-            this.levelManager.removeTower(this.selectedTower);
-            
-            this.log(`${this.selectedTower.name} sold for ${deletedData.goldRefunded}g!`);
-            this.selectedTower = null;
-            this.showSelectedTowerInfo();
-        } catch (err) {
-            this.log(`Sale failed: ${err.message}`);
-            console.error('Delete error:', err);
-        }
+        const refund = this.selectedTower.sellValue;
+        this.gold += refund;
+        this.updateHUD();
+        
+        this.levelManager.removeTower(this.selectedTower);
+        
+        this.log(`${this.selectedTower.name} sold for ${refund}g!`);
+        this.selectedTower = null;
+        this.showSelectedTowerInfo();
     }
 
     showWaveAnnouncement(text) {
@@ -506,6 +496,7 @@ class GameManager {
     gameOver(victory) {
         this.isGameOver = true;
         this.isPaused = false;
+        this.clearNextWaveTimer();
 
         if (victory && this.currentLevelId) {
             this.onLevelCompleted?.(this.currentLevelId);

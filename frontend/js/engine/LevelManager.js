@@ -5,7 +5,7 @@
 class LevelManager {
     /**
      * @param {object}   levelData     - Level definition (grid, waypoints)
-     * @param {object[]} towerCatalog  - Tower definitions from backend
+     * @param {object[]} towerCatalog  - Tower definitions from catalog
      */
     constructor(levelData, towerCatalog) {
         this.levelData = levelData;

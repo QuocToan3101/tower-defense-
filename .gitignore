@@ -1,0 +1,9 @@
+.gradle/
+build/
+target/
+**/build/
+**/target/
+**/.gradle/
+*.class
+*.jar
+node_modules/

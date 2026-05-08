@@ -6,9 +6,108 @@
     <title>Tower Defense — Realm's Last Stand</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20260505">
+    <link rel="stylesheet" href="css/style.css?v=20260508">
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  ERROR FALLBACK DISPLAY (shown if app fails to load)    -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="error-display" class="error-display hidden">
+  <div class="error-box">
+    <h1>⚠️ Application Error</h1>
+    <p id="error-message">Loading game...</p>
+    <p id="error-details" class="error-details"></p>
+    <div id="error-log" class="error-log"></div>
+    <button id="error-retry" onclick="location.reload()">Retry</button>
+  </div>
+  <style>
+    .error-display {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #0a0c12, #111520);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+      font-family: 'Courier New', monospace;
+    }
+    .error-display.hidden { display: none; }
+    .error-box {
+      background: rgba(20, 24, 32, 0.95);
+      border: 2px solid #e05050;
+      border-radius: 8px;
+      padding: 40px;
+      max-width: 500px;
+      color: #e8dfc8;
+      text-align: center;
+    }
+    .error-box h1 { color: #e05050; margin-bottom: 20px; }
+    .error-details { color: #a09880; font-size: 12px; margin-top: 15px; }
+    .error-log {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid #4a6fa5;
+      border-radius: 4px;
+      padding: 10px;
+      margin: 15px 0;
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      font-size: 11px;
+    }
+    .error-log-entry { margin: 3px 0; color: #a09880; }
+    .error-log-entry.warn { color: #f0c040; }
+    .error-log-entry.error { color: #e05050; }
+    button {
+      background: #e05050;
+      color: #e8dfc8;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+    button:hover { background: #ff6b6b; }
+  </style>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  LOADING SCREEN                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p>Initializing Tower Defense...</p>
+  </div>
+  <style>
+    .loading-screen {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #0a0c12, #111520);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10000;
+    }
+    .loading-screen.hidden { display: none; }
+    .loading-box {
+      text-align: center;
+      color: #c9a227;
+      font-family: 'Cinzel', serif;
+    }
+    .loading-spinner {
+      border: 3px solid rgba(201, 162, 39, 0.2);
+      border-top: 3px solid #c9a227;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!--  MAIN APP SHELL                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
 <div id="app-shell">
     <!-- ═══════════════════════════════════════════════════ -->
     <!--  START SCREEN                                       -->
@@ -180,22 +279,125 @@
 <!-- ═══════════════════════════════════════════════════════ -->
 <!--  SCRIPTS                                               -->
 <!-- ═══════════════════════════════════════════════════════ -->
-<script src="js/api/ApiClient.js?v=20260505"></script>
-<script src="js/Constants.js?v=20260505"></script>
-<script src="js/data/maps.js?v=20260505"></script>
-<script src="js/engine/EventBus.js?v=20260505"></script>
-<script src="js/engine/LevelData.js?v=20260505"></script>
-<script src="js/entities/Enemy.js?v=20260505"></script>
-<script src="js/entities/Projectile.js?v=20260505"></script>
-<script src="js/entities/Tower.js?v=20260505"></script>
-<script src="js/engine/WaveManager.js?v=20260505"></script>
-<script src="js/engine/LevelManager.js?v=20260505"></script>
-<script src="js/components/ScreenManager.js?v=20260505"></script>
-<script src="js/screens/StartScreen.js?v=20260505"></script>
-<script src="js/screens/LevelSelectScreen.js?v=20260505"></script>
-<script src="js/screens/GameScreen.js?v=20260505"></script>
-<script src="js/engine/GameManager.js?v=20260505"></script>
-<script src="js/ui/UIManager.js?v=20260505"></script>
-<script src="js/main.js?v=20260505"></script>
+
+<!-- ERROR HANDLER & RESOURCE MONITOR (FIRST - before anything else) -->
+<script>
+  // Global error tracking
+  window.appErrors = [];
+  window.appWarnings = [];
+  
+  function logError(type, message, data) {
+    const entry = { type, message, data, timestamp: new Date().toISOString() };
+    window.appErrors.push(entry);
+    console.error(`[${type}] ${message}`, data);
+    
+    // Send to main process if available
+    if (window.electronLog?.error) {
+      window.electronLog.error(message, data);
+    }
+    
+    // Update error display
+    updateErrorDisplay();
+  }
+
+  function logWarning(message, data) {
+    const entry = { message, data, timestamp: new Date().toISOString() };
+    window.appWarnings.push(entry);
+    console.warn(message, data);
+  }
+
+  function updateErrorDisplay() {
+    const errorDisplay = document.getElementById('error-display');
+    const errorLog = document.getElementById('error-log');
+    const errorMessage = document.getElementById('error-message');
+    
+    if (window.appErrors.length > 0) {
+      errorDisplay.classList.remove('hidden');
+      const lastError = window.appErrors[window.appErrors.length - 1];
+      errorMessage.textContent = `Error: ${lastError.message}`;
+      
+      errorLog.innerHTML = window.appErrors
+        .map(e => `<div class="error-log-entry error">${e.type}: ${e.message}</div>`)
+        .concat(window.appWarnings.map(w => `<div class="error-log-entry warn">⚠️ ${w.message}</div>`))
+        .join('');
+    }
+  }
+
+  // Catch global errors
+  window.addEventListener('error', (event) => {
+    logError('UNCAUGHT_ERROR', event.message, {
+      filename: event.filename,
+      lineno: event.lineno,
+      stack: event.error?.stack
+    });
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    logError('UNHANDLED_REJECTION', String(event.reason), event.reason);
+  });
+
+  // Monitor script loading
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    return originalFetch.apply(this, args).catch(err => {
+      logError('FETCH_ERROR', args[0], err);
+      throw err;
+    });
+  };
+
+  // Monitor resource loading
+  window.addEventListener('error', (event) => {
+    if (event.target !== window) {
+      const src = event.target.src || event.target.href || 'unknown';
+      logError('RESOURCE_LOAD_ERROR', `Failed to load: ${src}`, {
+        type: event.target.tagName,
+        src: src
+      });
+    }
+  }, true);
+
+  // Hide loading screen after short delay if still loading
+  setTimeout(() => {
+    const loading = document.getElementById('loading-screen');
+    if (loading && !loading.classList.contains('hidden')) {
+      // Still loading, this is OK - show loading indicator
+    }
+  }, 2000);
+</script>
+
+<script src="js/api/ApiClient.js?v=20260508"></script>
+<script src="js/data/MockCatalog.js?v=20260508"></script>
+<script src="js/Constants.js?v=20260508"></script>
+<script src="js/data/maps.js?v=20260508"></script>
+<script src="js/data/GameBalanceConfig.js?v=20260508"></script>
+<script src="js/engine/EventBus.js?v=20260508"></script>
+<script src="js/engine/LevelData.js?v=20260508"></script>
+<script src="js/entities/Enemy.js?v=20260508"></script>
+<script src="js/entities/Projectile.js?v=20260508"></script>
+<script src="js/entities/Tower.js?v=20260508"></script>
+<script src="js/engine/WaveManager.js?v=20260508"></script>
+<script src="js/engine/LevelManager.js?v=20260508"></script>
+<script src="js/components/ScreenManager.js?v=20260508"></script>
+<script src="js/screens/StartScreen.js?v=20260508"></script>
+<script src="js/screens/LevelSelectScreen.js?v=20260508"></script>
+<script src="js/screens/GameScreen.js?v=20260508"></script>
+<script src="js/engine/GameManager.js?v=20260508"></script>
+<script src="js/ui/UIManager.js?v=20260508"></script>
+
+<!-- MAIN APP INITIALIZATION (LAST - after all scripts) -->
+<script src="js/main.js?v=20260508"></script>
+
+<!-- HIDE LOADING SCREEN AFTER SUCCESSFUL INIT -->
+<script>
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const loading = document.getElementById('loading-screen');
+      if (loading && window.appErrors.length === 0) {
+        loading.classList.add('hidden');
+      }
+    }, 500);
+  });
+</script>
+<script src="js/main.js?v=20260508"></script>
 </body>
 </html>

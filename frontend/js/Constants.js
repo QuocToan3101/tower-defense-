@@ -2,6 +2,9 @@
  * Constants.js
  * Central configuration: grid, colours, timing, balance.
  * Edit values here to tune gameplay without touching logic.
+ * 
+ * REBALANCED May 2026 for new player friendliness
+ * See GameBalanceConfig.js for detailed game design analysis
  */
 const CONSTANTS = Object.freeze({
 
@@ -12,24 +15,24 @@ const CONSTANTS = Object.freeze({
     GRID_COLS:      20,
     GRID_ROWS:      14,
 
-    // ─── Game Balance ──────────────────────────────────────
-    STARTING_HP:    20,
-    STARTING_GOLD:  150,
-    GOLD_PER_WAVE:  30,       // bonus gold at wave start
+    // ─── Game Balance (REBALANCED for new players) ─────────
+    STARTING_HP:    35,         // was 20 - learning buffer for waves 3-4
+    STARTING_GOLD:  400,        // was 300 - enable strategic tower choices
+    GOLD_PER_WAVE:  50,         // was 30 - progression feels rewarding
 
     // ─── Tower Upgrade Scaling ─────────────────────────────
-    UPGRADE_DMG_SCALE:   1.40,   // ×1.40 damage per upgrade level
-    UPGRADE_RANGE_SCALE: 1.10,
-    UPGRADE_RATE_SCALE:  1.15,
-    MAX_TOWER_LEVEL:     3,
+    UPGRADE_DMG_SCALE:   1.25,  // was 1.40 - smoother progression per level
+    UPGRADE_RANGE_SCALE: 1.08,  // was 1.10
+    UPGRADE_RATE_SCALE:  1.12,  // was 1.15
+    MAX_TOWER_LEVEL:     5,     // was 3 - more upgrade progression feeling
 
     // ─── Enemy Scaling per Wave ────────────────────────────
-    ENEMY_HP_SCALE:    1.20,   // ×1.20 HP per wave
-    ENEMY_SPEED_SCALE: 1.05,
-    ENEMY_COUNT_SCALE: 1.15,
+    ENEMY_HP_SCALE:    1.08,    // was 1.10 - softer mid-game difficulty
+    ENEMY_SPEED_SCALE: 1.04,    // was 1.05
+    ENEMY_COUNT_SCALE: 1.12,    // was 1.15 - less exponential growth
 
     // ─── Wave Timings ──────────────────────────────────────
-    SPAWN_INTERVAL_MS:   800,   // ms between enemy spawns
+    SPAWN_INTERVAL_MS:   1200,  // was 800ms - less rushed feeling, time to react
     BETWEEN_WAVE_MS:    3000,   // break between waves
 
     // ─── Colours (Canvas rendering) ───────────────────────
@@ -83,3 +86,4 @@ const CONSTANTS = Object.freeze({
         TOWER: 2,
     },
 });
+

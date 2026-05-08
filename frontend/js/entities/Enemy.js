@@ -5,7 +5,7 @@
  */
 class Enemy {
     /**
-     * @param {object} def       - Catalog definition from the backend
+     * @param {object} def       - Enemy definition from catalog
      * @param {Array}  waypoints - Array of {x,y} path waypoints
      * @param {number} wave      - Current wave number (for scaling)
      */

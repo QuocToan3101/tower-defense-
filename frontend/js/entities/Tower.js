@@ -223,61 +223,11 @@ class Tower {
         ctx.closePath();
     }
 
-    // ─── Server Sync (Upgrade/Delete via API) ──────────────
+    // ─── Upgrade/Sell (Local-only) ────────────────────────
 
     /**
-     * Call backend API to upgrade this tower.
-     * Backend validates and returns new stats.
-     * On success, updates local tower state.
-     * 
-     * @param {Long} catalogTowerId - Tower catalog ID (from definition)
-     * @returns {Promise<TowerUpgradeResponse>}
+     * Local upgrade - no API needed in offline mode.
      */
-    async upgradeAsync(catalogTowerId) {
-        if (!this.canUpgrade) {
-            throw new Error('Tower already at max level');
-        }
-
-        try {
-            const res = await api.upgradeTower(catalogTowerId, this.level);
-            if (!res.success) {
-                throw new Error(res.message || 'Upgrade failed');
-            }
-
-            // Update tower stats with response from backend
-            const data = res.data;
-            this.level    = data.newLevel;
-            this.damage   = data.newDamage;
-            this.range    = data.newRange;
-            this.fireRate = data.newFireRate;
-            return data;
-        } catch (err) {
-            console.error(`Failed to upgrade tower:`, err);
-            throw err;
-        }
-    }
-
-    /**
-     * Call backend API to delete/sell this tower.
-     * Returns refund amount.
-     * 
-     * @param {Long} catalogTowerId - Tower catalog ID (from definition)
-     * @returns {Promise<TowerDeleteResponse>}
-     */
-    async deleteAsync(catalogTowerId) {
-        try {
-            const res = await api.deleteTower(catalogTowerId, this.level);
-            if (!res.success) {
-                throw new Error(res.message || 'Delete failed');
-            }
-
-            const data = res.data;
-            return data;
-        } catch (err) {
-            console.error(`Failed to delete tower:`, err);
-            throw err;
-        }
-    }
 
     /** Serialise for save system. */
     toJSON() {
