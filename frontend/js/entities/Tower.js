@@ -117,3 +117,5 @@ class TowerFactory {
         }
     }
 }
+
+export { BaseTower, TowerFactory }; 
