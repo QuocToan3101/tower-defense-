@@ -1,10 +1,54 @@
 /**
- * TowerTypes.js
+ * Tower.js
  * * [BÁO CÁO COMMIT TUẦN NÀY]
  * Áp dụng tính Kế thừa (Inheritance) và Đa hình (Polymorphism) để loại bỏ 
  * các vòng lặp if/else hardcode. Mỗi loại tháp sẽ tự định nghĩa logic 
  * tạo đạn và hiệu ứng của riêng nó.
  */
+
+/**
+ * TẬP HỢP CÁC CHIẾN THUẬT NGẮM BẮN (STRATEGY PATTERN)
+ */
+const TargetingStrategies = {
+    // Bắn quái đi gần đến đích nhất (Mặc định cũ)
+    FIRST: (enemies, tower) => {
+        let best = null, bestProg = -Infinity;
+        for (const e of enemies) {
+            if (!e.alive || e.reached) continue;
+            if (tower._distance(e) <= tower.range && e.distanceTravelled > bestProg) {
+                bestProg = e.distanceTravelled;
+                best = e;
+            }
+        }
+        return best;
+    },
+    
+    // Bắn quái có nhiều HP nhất
+    STRONGEST: (enemies, tower) => {
+        let best = null, maxHP = -Infinity;
+        for (const e of enemies) {
+            if (!e.alive || e.reached) continue;
+            if (tower._distance(e) <= tower.range && e.hp > maxHP) {
+                maxHP = e.hp;
+                best = e;
+            }
+        }
+        return best;
+    },
+    
+    // Bắn quái đang yếu máu nhất để kết liễu
+    WEAKEST: (enemies, tower) => {
+        let best = null, minHP = Infinity;
+        for (const e of enemies) {
+            if (!e.alive || e.reached) continue;
+            if (tower._distance(e) <= tower.range && e.hp < minHP) {
+                minHP = e.hp;
+                best = e;
+            }
+        }
+        return best;
+    }
+};
 
 // 1. CLASS CHA (Chứa logic dùng chung như Mua bán, Nâng cấp, Vẽ hình)
 class BaseTower {
