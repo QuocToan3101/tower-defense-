@@ -222,3 +222,107 @@ class BaseTower {
         };
     }
 }
+
+
+// 2. CÁC CLASS CON (Định nghĩa tính chất riêng biệt)
+
+/** Tháp Băng: Khai báo sẵn hiệu ứng làm chậm */
+class FrostTower extends BaseTower {
+    constructor(def, gridX, gridY) {
+        super(def, gridX, gridY);
+        this.damageType = 'magic';
+        this.extras = { slow: { factor: 0.6, duration: 2.0 } };
+    }
+    // FrostTower dùng đạn bình thường nhưng có hiệu ứng slow (đã nằm trong this.extras),
+    // nên không cần ghi đè _createProjectile, nó sẽ tự dùng của BaseTower.
+}
+
+/** Tháp Pháo (AoE): Gây sát thương lan */
+class SplashTower extends BaseTower {
+    constructor(def, gridX, gridY) {
+        super(def, gridX, gridY);
+        this.damageType = 'fire';
+        this.splashRadius = 75; // Bán kính nổ
+    }
+
+    // Ghi đè hàm tạo đạn để nhét thêm biến splashRadius vào extras
+    _createProjectile(target) {
+        return new Projectile(
+            this.x, this.y,
+            target,
+            this.damage,
+            250, // Đạn pháo bay chậm hơn đạn thường (350)
+            this.projColor,
+            this.damageType,
+            { splashRadius: this.splashRadius, ...this.extras } 
+        );
+    }
+}
+
+/** Tháp Hỗ trợ: Tăng sát thương cho tháp đồng minh xung quanh */
+class AuraTower extends BaseTower {
+    constructor(def, gridX, gridY) {
+        super(def, gridX, gridY);
+        this.damageType = 'support';
+        this.buffMultiplier = 1.2; // Tăng 20% sát thương
+        this.color = '#3498db';    // Đổi tháp thành màu xanh dương cho dễ nhận diện
+        
+        // Không dùng cooldown bắn đạn, đổi thành cooldown quét buff (1 giây 1 lần)
+        this.fireRate = 1; 
+    }
+
+    /**
+     * Ghi đè hoàn toàn hàm update. 
+     * Lưu ý: Tháp này không sinh ra đạn nên return null.
+     */
+    update(enemies, dt, allTowers = []) {
+        this._fireCooldown -= dt;
+        
+        if (this._fireCooldown <= 0) {
+            this._fireCooldown = 1 / this.fireRate;
+            this.applyBuff(allTowers);
+        }
+        return null; 
+    }
+
+    applyBuff(allTowers) {
+        for (const ally of allTowers) {
+            // Không tự buff chính mình hoặc tháp buff khác
+            if (ally === this || ally instanceof AuraTower) continue;
+            
+            // Nếu đồng minh nằm trong tầm phủ sóng
+            if (this._distance(ally) <= this.range) {
+                ally.isBuffed = true;
+                ally.buffedDamage = ally.damage * this.buffMultiplier; 
+            } else {
+                ally.isBuffed = false;
+            }
+        }
+    }
+}
+
+// 3. FACTORY PATTERN (Trạm phân phối)
+
+/** * Thay vì gọi `new Tower(...)`, hệ thống sẽ gọi Factory này
+ * để nó tự quyết định sinh ra class con nào dựa vào type.
+ */
+class TowerFactory {
+    static create(def, gridX, gridY) {
+        switch (def.type) {
+            case 'ICE':
+                return new FrostTower(def, gridX, gridY);
+            case 'FLAME': 
+            case 'SPLASH':
+                return new SplashTower(def, gridX, gridY);
+            case 'AURA':
+            case 'SUPPORT':
+                return new AuraTower(def, gridX, gridY);
+            default:
+                return new BaseTower(def, gridX, gridY);
+        }
+    }
+}
+
+// Xuất các class ra để dùng ở GameManager.js
+// Nếu project của bạn đang dùng ES6 Modules thì mở comment dòng dưới:
+// export { BaseTower, FrostTower, SplashTower, AuraTower, Tower
