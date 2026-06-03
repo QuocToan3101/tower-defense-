@@ -259,48 +259,6 @@ class SplashTower extends BaseTower {
     }
 }
 
-/** Tháp Hỗ trợ: Tăng sát thương cho tháp đồng minh xung quanh */
-class AuraTower extends BaseTower {
-    constructor(def, gridX, gridY) {
-        super(def, gridX, gridY);
-        this.damageType = 'support';
-        this.buffMultiplier = 1.2; // Tăng 20% sát thương
-        this.color = '#3498db';    // Đổi tháp thành màu xanh dương cho dễ nhận diện
-        
-        // Không dùng cooldown bắn đạn, đổi thành cooldown quét buff (1 giây 1 lần)
-        this.fireRate = 1; 
-    }
-
-    /**
-     * Ghi đè hoàn toàn hàm update. 
-     * Lưu ý: Tháp này không sinh ra đạn nên return null.
-     */
-    update(enemies, dt, allTowers = []) {
-        this._fireCooldown -= dt;
-        
-        if (this._fireCooldown <= 0) {
-            this._fireCooldown = 1 / this.fireRate;
-            this.applyBuff(allTowers);
-        }
-        return null; 
-    }
-
-    applyBuff(allTowers) {
-        for (const ally of allTowers) {
-            // Không tự buff chính mình hoặc tháp buff khác
-            if (ally === this || ally instanceof AuraTower) continue;
-            
-            // Nếu đồng minh nằm trong tầm phủ sóng
-            if (this._distance(ally) <= this.range) {
-                ally.isBuffed = true;
-                ally.buffedDamage = ally.damage * this.buffMultiplier; 
-            } else {
-                ally.isBuffed = false;
-            }
-        }
-    }
-}
-
 // 3. FACTORY PATTERN (Trạm phân phối)
 
 /** * Thay vì gọi `new Tower(...)`, hệ thống sẽ gọi Factory này
