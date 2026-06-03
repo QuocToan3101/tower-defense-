@@ -301,6 +301,7 @@ class AuraTower extends BaseTower {
     }
 }
 
+
 // 3. FACTORY PATTERN (Trạm phân phối)
 
 /** * Thay vì gọi `new Tower(...)`, hệ thống sẽ gọi Factory này
@@ -324,5 +325,6 @@ class TowerFactory {
 }
 
 // Xuất các class ra để dùng ở GameManager.js
-// Nếu project của bạn đang dùng ES6 Modules thì mở comment dòng dưới:
-// export { BaseTower, FrostTower, SplashTower, AuraTower, Tower
+
+export { BaseTower, FrostTower, SplashTower, AuraTower, Tower}
+
