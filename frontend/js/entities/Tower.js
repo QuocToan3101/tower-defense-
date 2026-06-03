@@ -324,5 +324,6 @@ class TowerFactory {
 }
 
 // Xuất các class ra để dùng ở GameManager.js
-// Nếu project của bạn đang dùng ES6 Modules thì mở comment dòng dưới:
-// export { BaseTower, FrostTower, SplashTower, AuraTower, Tower
+
+export { BaseTower, FrostTower, SplashTower, AuraTower, Tower}
+
