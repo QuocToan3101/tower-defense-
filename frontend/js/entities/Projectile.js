@@ -73,15 +73,33 @@ class Projectile {
     render(ctx) {
         if (!this.alive) return;
 
+        // Trail: short motion blur using a semi-transparent line toward target
+        if (this.target && this.target.alive) {
+            ctx.save();
+            ctx.strokeStyle = this.color;
+            ctx.globalAlpha = 0.35;
+            ctx.lineWidth = this.radius * 1.8;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + (this.target.x - this.x) * 0.15, this.y + (this.target.y - this.y) * 0.15);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Projectile body with subtle radial gradient and glow
+        ctx.save();
+        const g = ctx.createRadialGradient(this.x - this.radius*0.3, this.y - this.radius*0.3, 1, this.x, this.y, this.radius);
+        g.addColorStop(0, 'rgba(255,255,255,0.95)');
+        g.addColorStop(0.5, this.color);
+        g.addColorStop(1, 'rgba(0,0,0,0.15)');
+
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-
-        // Glow effect
+        ctx.fillStyle = g;
         ctx.shadowColor = this.color;
-        ctx.shadowBlur  = 8;
+        ctx.shadowBlur  = 10;
         ctx.fill();
-        ctx.shadowBlur  = 0;
+        ctx.shadowBlur = 0;
+        ctx.restore();
     }
 }

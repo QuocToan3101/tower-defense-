@@ -205,22 +205,39 @@ class BaseTower {
             ctx.stroke();
         }
 
-        ctx.fillStyle   = this.color;
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        // Tower body — rounded square with gradient for depth
+        ctx.save();
+        const grad = ctx.createLinearGradient(x, y, x + s, y + s);
+        grad.addColorStop(0, this._lighten(this.color, 0.12));
+        grad.addColorStop(1, this._darken(this.color, 0.12));
+
+        ctx.fillStyle   = grad;
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)';
         ctx.lineWidth   = 1.5;
-        this._roundRect(ctx, x, y, s, s, 4);
+        this._roundRect(ctx, x, y, s, s, 6);
         ctx.fill();
         ctx.stroke();
 
+        // Turret head: small circle on top to suggest barrel
+        ctx.beginPath();
+        ctx.arc(this.x, this.y - 4, Math.max(6, s * 0.12), 0, Math.PI * 2);
+        ctx.fillStyle = this._darken(this.color, 0.08);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.stroke();
+        ctx.restore();
+
         for (let i = 0; i < this.level; i++) {
+            // Level pips
             ctx.beginPath();
-            ctx.arc(this.x - (this.level - 1) * 4 + i * 8, this.y + s / 2 - 6, 3, 0, Math.PI * 2);
+            ctx.arc(this.x - (this.level - 1) * 5 + i * 10, this.y + s / 2 - 8, 3.5, 0, Math.PI * 2);
             ctx.fillStyle = CONSTANTS.COLOR.UI_GOLD;
             ctx.fill();
         }
 
-        ctx.fillStyle    = 'rgba(255,255,255,0.9)';
-        ctx.font         = `bold 14px monospace`;
+        // Tower label
+        ctx.fillStyle    = 'rgba(255,255,255,0.95)';
+        ctx.font         = `bold 12px monospace`;
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.type[0], this.x, this.y - 2);
@@ -231,6 +248,25 @@ class BaseTower {
             this._roundRect(ctx, x - 1, y - 1, s + 2, s + 2, 5);
             ctx.stroke();
         }
+    }
+
+    _lighten(hex, amount) {
+        const c = this._hexToRgb(hex);
+        return `rgb(${Math.min(255, c.r + amount*255)}, ${Math.min(255, c.g + amount*255)}, ${Math.min(255, c.b + amount*255)})`;
+    }
+
+    _darken(hex, amount) {
+        const c = this._hexToRgb(hex);
+        return `rgb(${Math.max(0, c.r - amount*255)}, ${Math.max(0, c.g - amount*255)}, ${Math.max(0, c.b - amount*255)})`;
+    }
+
+    _hexToRgb(hex) {
+        const h = hex.replace('#','');
+        const bigint = parseInt(h, 16);
+        if (h.length === 6) {
+            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        }
+        return { r: 100, g: 100, b: 100 };
     }
 
     _roundRect(ctx, x, y, w, h, r) {
