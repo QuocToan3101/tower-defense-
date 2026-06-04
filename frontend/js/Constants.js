@@ -37,28 +37,33 @@ const CONSTANTS = Object.freeze({
 
     // ─── Colours (Canvas rendering) ───────────────────────
     COLOR: {
-        PATH:        '#3a3020',
-        PATH_BORDER: '#2a2010',
-        GRASS:       '#1a2810',
-        GRASS_ALT:   '#162210',
+        // Map palette (warmer, richer greens)
+        PATH:        '#6b4f2b',
+        PATH_BORDER: '#4b3518',
+        GRASS:       '#2b6f3a',
+        GRASS_ALT:   '#235a2e',
+
+        // Map background gradient (subtle vignette)
+        MAP_SKY_TOP:    '#081e12',
+        MAP_SKY_BOTTOM: '#072012',
 
         // Tower colours by type
-        TOWER_ARCHER: '#4a7a3a',
-        TOWER_CANNON: '#6a5a3a',
+        TOWER_ARCHER: '#3d7b3f',
+        TOWER_CANNON: '#6b4e3a',
         TOWER_MAGE:   '#5a3a8a',
-        TOWER_ICE:    '#3a7a9a',
-        TOWER_FLAME:  '#9a4a2a',
+        TOWER_ICE:    '#3a8aa0',
+        TOWER_FLAME:  '#b2502a',
 
         // Tower range ring
         RANGE_RING: 'rgba(255,255,255,0.12)',
         RANGE_RING_SELECTED: 'rgba(255,220,100,0.20)',
 
         // Enemy colours by type
-        ENEMY_GOBLIN: '#50a030',
+        ENEMY_GOBLIN: '#5db13a',
         ENEMY_ORC:    '#7a5020',
-        ENEMY_TROLL:  '#5a7030',
-        ENEMY_WOLF:   '#808090',
-        ENEMY_DRAGON: '#c03020',
+        ENEMY_TROLL:  '#567033',
+        ENEMY_WOLF:   '#7f7f8f',
+        ENEMY_DRAGON: '#c23a28',
 
         // HP bar
         HP_FULL:    '#40d040',
@@ -74,9 +79,9 @@ const CONSTANTS = Object.freeze({
         PROJ_FLAME:  '#ff5510',
 
         // UI
-        UI_GOLD:     '#f0c040',
-        UI_HP_RED:   '#e04040',
-        UI_TEXT:     '#e8dfc8',
+        UI_GOLD:     '#f4d67a',
+        UI_HP_RED:   '#e05050',
+        UI_TEXT:     '#f7f5ee',
     },
 
     // ─── Path tile indicator ───────────────────────────────
