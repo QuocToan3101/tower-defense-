@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.logWarning) window.logWarning('DOM content loaded, starting initialization');
 
     try {
-        // ─ Check required global bindings exposed by classic scripts
+        // [UC-01 - Bắt đầu trò chơi] Bước 1.1.1: Người chơi mở game – DOMContentLoaded kích hoạt, kiểm tra các class bắt buộc
         const requiredBindings = {
             ApiClient: typeof ApiClient !== 'undefined' ? ApiClient : undefined,
             UIManager: typeof UIManager !== 'undefined' ? UIManager : undefined,
@@ -43,15 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(([name]) => name);
 
         if (missing.length > 0) {
-            const errorMsg = `Missing required classes: ${missing.join(', ')}`;
-            throw new Error(errorMsg);
+            throw new Error(`Missing required classes: ${missing.join(', ')}`);
         }
         console.log('✅ All required classes loaded');
 
-        // ─ Initialize managers
+        // ─ Initialize dependencies
         const apiClient = new ApiClient('http://localhost:8080');
         const unlockedLevelKey = 'td.unlockedLevel';
 
+        // [UC-01 - Bắt đầu trò chơi] Bước 1.2.1: Có tiến trình đã lưu – readUnlockedLevel() đọc localStorage, truyền getUnlockedLevel cho LevelSelectScreen
         const readUnlockedLevel = () => {
             const parsed = Number(localStorage.getItem(unlockedLevelKey) || '1');
             return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 4) : 1;
@@ -111,8 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('⚙️ Bootstrapping game manager...');
         gameManager.bootstrap()
             .then(() => {
+                // [UC-01 - Bắt đầu trò chơi] Bước 1.1.2: Hiển thị Main Menu – bootstrap() hoàn tất, gọi screenManager.show('start')
                 console.log('✨ Game bootstrap complete, showing start screen');
                 screenManager.show('start');
+
                 // Hide error display on success
                 const errorDisplay = document.getElementById('error-display');
                 if (errorDisplay) errorDisplay.classList.add('hidden');
@@ -125,10 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
     } catch (error) {
-        const errorMsg = `🔥 Fatal initialization error: ${error.message}`;
-        console.error(errorMsg);
+        console.error(`🔥 Fatal initialization error: ${error.message}`);
         console.error('Stack:', error.stack);
-        
+
         if (window.logError) {
             window.logError('FATAL_INIT_ERROR', error.message, { stack: error.stack });
         }
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const errorDisplay = document.getElementById('error-display');
             const errorMessage = document.getElementById('error-message');
             const errorDetails = document.getElementById('error-details');
-            
+
             if (errorDisplay && errorMessage) {
                 errorMessage.textContent = `Fatal Error: ${error.message}`;
                 if (errorDetails) {
