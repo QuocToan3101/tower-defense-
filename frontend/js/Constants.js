@@ -27,7 +27,7 @@ const CONSTANTS = Object.freeze({
     MAX_TOWER_LEVEL:     5,     // was 3 - more upgrade progression feeling
 
     // ─── Enemy Scaling per Wave ────────────────────────────
-    ENEMY_HP_SCALE:    1.08,    // was 1.10 - softer mid-game difficulty
+    ENEMY_HP_SCALE:    1.05,    // reduced further to soften mid/late-game HP scaling
     ENEMY_SPEED_SCALE: 1.04,    // was 1.05
     ENEMY_COUNT_SCALE: 1.12,    // was 1.15 - less exponential growth
 
