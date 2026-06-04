@@ -82,6 +82,7 @@ class Enemy {
                 if (this.waypointIndex >= this.waypoints.length) {
                     // Enemy reached the exit
                     this.reached = true;
+                    console.log('[Enemy] reached exit:', this.name, 'id=', this.id);
                     eventBus.emit('enemy:reached', this);
                     return;
                 }
@@ -111,6 +112,7 @@ class Enemy {
         const finalDamage    = Math.max(1, Math.round(rawDamage * (1 - armorReduction)));
 
         this.hp -= finalDamage;
+        console.log('[Enemy] takeDamage', this.name, 'raw=', rawDamage, 'final=', finalDamage, 'hp=', this.hp);
 
         if (this.hp <= 0) {
             this.hp    = 0;

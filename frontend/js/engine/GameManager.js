@@ -36,6 +36,8 @@ class GameManager {
 
         this.towerCatalog = [];
         this.enemyCatalog = [];
+        // Track which enemy instances have applied gate damage
+        this._gateDamaged = new WeakSet();
 
         this.bindEvents();
         this.bindControls();
@@ -113,22 +115,67 @@ class GameManager {
             this.updateHUD();
         });
 
-        eventBus.on('enemy:reached', (enemy) => {
-            console.log('[GM] enemy:reached handler called for', enemy?.name, 'reached=', enemy?.reached, '_gateDamageApplied=', enemy?._gateDamageApplied);
-            // Guard: ensure we only apply gate damage once per enemy instance
-            if (enemy._gateDamageApplied) {
-                console.log('[GM] gate damage already applied for', enemy.name);
-                return;
+            // Start a short countdown before waves begin
+            if (this.countdownTimer) {
+                clearInterval(this.countdownTimer);
+                this.countdownTimer = null;
             }
-            enemy._gateDamageApplied = true;
+            this.startCountdown(5);
+        eventBus.on('enemy:reached', (enemy) => {
+            // Guard: ensure we only apply gate damage once per enemy instance
+            try {
+        /**
+         * Show a short countdown (seconds) then auto-start the first wave.
+         * @param {number} seconds
+         */
+        startCountdown(seconds = 5) {
+            if (this.countdownTimer) clearInterval(this.countdownTimer);
+            let remaining = Math.max(1, Math.floor(seconds));
+            this.updateWaveInfo(`Starting in ${remaining}...`);
+            this.showWaveAnnouncement(`Starting in ${remaining}`);
 
-            this.playerHp -= enemy.damageToPlayer;
-            console.log('[GM] applied gate damage', enemy.damageToPlayer, 'new hp=', this.playerHp);
-            this.updateHUD();
-            this.log(`${enemy.name} breached the gate. -${enemy.damageToPlayer} HP`);
+            this.countdownTimer = setInterval(() => {
+                remaining -= 1;
+                if (remaining > 0) {
+                    this.updateWaveInfo(`Starting in ${remaining}...`);
+                    this.showWaveAnnouncement(`Starting in ${remaining}`);
+                    return;
+                }
+
+                clearInterval(this.countdownTimer);
+                this.countdownTimer = null;
+
+                // If already started or game over, do nothing
+                if (this.gameStarted || this.isGameOver) return;
+
+                // Start the game loop and first wave (same behaviour as Start button)
+                this.gameStarted = true;
+                document.getElementById('btn-start')?.classList.add('hidden');
+                document.getElementById('btn-pause')?.classList.remove('hidden');
+                this.startNextWave();
+                this.lastTime = performance.now();
+                requestAnimationFrame(this.loopBound);
+            }, 1000);
+        }
+                if (this._gateDamaged.has(enemy)) return;
+                this._gateDamaged.add(enemy);
+
+                this.playerHp -= enemy.damageToPlayer;
+                this.updateHUD();
+                // Ensure HUD element updated immediately (defensive)
+                try {
+                    const el = document.getElementById('hud-hp');
+                    if (el) el.textContent = `${this.playerHp}`;
+                } catch (e) {
+                    console.warn('Failed to set hud-hp directly', e);
+                }
+                this.log(`${enemy.name} breached the gate. -${enemy.damageToPlayer} HP`);
             if (this.playerHp <= 0) {
                 this.playerHp = 0;
                 this.gameOver(false);
+            }
+            } catch (err) {
+                console.warn('Error handling enemy:reached', err);
             }
         });
 
