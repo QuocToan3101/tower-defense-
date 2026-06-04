@@ -1,67 +1,95 @@
 /**
- * Tower.js
- * Represents a placed tower.
- * Handles targeting, shooting, upgrading, selling, and rendering.
+ * MÁY TRẠNG THÁI HỮU HẠN (FSM) CHO THÁP
  */
-class Tower {
-    /**
-     * @param {object} def    - Catalog definition (from backend or local fallback)
-     * @param {number} gridX  - Grid column
-     * @param {number} gridY  - Grid row
-     */
+const TowerState = {
+    IDLE: 'IDLE',             // Nghỉ ngơi (Bản đồ không có quái)
+    SEARCHING: 'SEARCHING',   // Đang quét tìm mục tiêu
+    ATTACKING: 'ATTACKING',   // Đã khóa mục tiêu, chuẩn bị nhả đạn
+    COOLDOWN: 'COOLDOWN'      // Vừa bắn xong, đang nạp đạn
+};
+
+
+/**
+ * TẬP HỢP CÁC CHIẾN THUẬT NGẮM BẮN (STRATEGY PATTERN)
+ */
+const TargetingStrategies = {
+    FIRST: (enemies, tower) => {
+        let best = null, bestProg = -Infinity;
+        for (const e of enemies) {
+            if (!e.alive || e.reached) continue;
+            if (tower._distance(e) <= tower.range && e.distanceTravelled > bestProg) {
+                bestProg = e.distanceTravelled;
+                best = e;
+            }
+        }
+        return best;
+    },
+    STRONGEST: (enemies, tower) => {
+        let best = null, maxHP = -Infinity;
+        for (const e of enemies) {
+            if (!e.alive || e.reached) continue;
+            if (tower._distance(e) <= tower.range && e.hp > maxHP) {
+                maxHP = e.hp;
+                best = e;
+            }
+        }
+        return best;
+    },
+    WEAKEST: (enemies, tower) => {
+        let best = null, minHP = Infinity;
+        for (const e of enemies) {
+            if (!e.alive || e.reached) continue;
+            if (tower._distance(e) <= tower.range && e.hp < minHP) {
+                minHP = e.hp;
+                best = e;
+            }
+        }
+        return best;
+    }
+};
+
+// 1. CLASS CHA (Chứa logic dùng chung)
+class BaseTower {
     constructor(def, gridX, gridY) {
-        this.id    = Tower._nextId++;
+        this.id    = BaseTower._nextId++;
         this.type  = def.type;
         this.name  = def.name;
         this.gridX = gridX;
         this.gridY = gridY;
 
-        // Pixel centre of the cell
-        const cs  = CONSTANTS.CELL_SIZE;
-        this.x    = gridX * cs + cs / 2;
-        this.y    = gridY * cs + cs / 2;
+        const cs   = CONSTANTS.CELL_SIZE;
+        this.x     = gridX * cs + cs / 2;
+        this.y     = gridY * cs + cs / 2;
 
-        // ─── Base Stats ───────────────────────────────────
         this.baseCost    = def.baseCost;
         this.upgradeCost = def.upgradeCost;
         this.sellRatio   = def.sellRatio ?? 0.6;
 
-        this.level       = 1;
-        this.damage      = def.baseDamage;
-        this.range       = def.baseRange;
-        this.fireRate    = def.baseFireRate;  // attacks per second
-        this.damageType  = Tower._damageType(def.type);
-        this.extras      = Tower._extras(def.type);
+        this.level      = 1;
+        this.damage     = def.baseDamage;
+        this.range      = def.baseRange;
+        this.fireRate   = def.baseFireRate; 
+        
+        this.damageType = 'normal'; 
+        this.extras     = {};       
 
-        // ─── Attack State ─────────────────────────────────
-        this._fireCooldown = 0;  // seconds until next shot
+        this._fireCooldown = 0;
         this._target       = null;
+        
+        // Mặc định tháp mới xây sẽ bắn mục tiêu đi xa nhất
+        this.targetStrategy = TargetingStrategies.FIRST;
+        
+        // Trạng thái FSM khởi điểm
+        this.state = TowerState.SEARCHING;
 
-        // ─── Rendering ────────────────────────────────────
-        this.color         = CONSTANTS.COLOR[`TOWER_${this.type}`] || '#607030';
-        this.projColor     = CONSTANTS.COLOR[`PROJ_${this.type}`]  || '#ffff88';
-        this.selected      = false;
-
-        /** Projectiles created by this tower, managed by GameManager */
-        this.projectiles   = [];
+        this.color      = CONSTANTS.COLOR[`TOWER_${this.type}`] || '#607030';
+        this.projColor  = CONSTANTS.COLOR[`PROJ_${this.type}`]  || '#ffff88';
+        this.selected   = false;
     }
 
     static _nextId = 0;
 
-    // ─── Static helpers ───────────────────────────────────
-
-    static _damageType(type) {
-        if (type === 'MAGE')  return 'magic';
-        if (type === 'FLAME') return 'fire';
-        return 'normal';
-    }
-
-    static _extras(type) {
-        if (type === 'ICE')   return { slow: { factor: 0.6, duration: 2.0 } };
-        return {};
-    }
-
-    // ─── Computed Properties ──────────────────────────────
+    // ─── CÁC HÀM CHỈ SỐ & NÂNG CẤP ──────────────
 
     get totalInvested() {
         let cost = this.baseCost;
@@ -81,8 +109,6 @@ class Tower {
         return this.upgradeCost * this.level;
     }
 
-    // ─── Upgrade / Sell ──────────────────────────────────
-
     upgrade() {
         if (!this.canUpgrade) return;
         this.level++;
@@ -91,50 +117,57 @@ class Tower {
         this.fireRate *= CONSTANTS.UPGRADE_RATE_SCALE;
     }
 
-    // ─── Combat ───────────────────────────────────────────
+    // ─── HỆ THỐNG CHIẾN ĐẤU (FSM + Strategy Pattern) ─────────────
 
-    /**
-     * Per-frame update: find target and shoot.
-     * @param {Enemy[]} enemies   - Active enemy array
-     * @param {number}  dt        - Delta time in seconds
-     * @returns {Projectile|null} - New projectile if fired this frame
-     */
-    update(enemies, dt) {
-        this._fireCooldown = Math.max(0, this._fireCooldown - dt);
+    // Hàm để UI gọi khi người chơi bấm nút đổi mục tiêu
+    setStrategy(strategyName) {
+        if (TargetingStrategies[strategyName]) {
+            this.targetStrategy = TargetingStrategies[strategyName];
+        }
+    }
 
-        // Validate current target (alive and in range)
-        if (this._target && (!this._target.alive || this._distance(this._target) > this.range)) {
-            this._target = null;
+    update(enemies, dt, allTowers = []) {
+        switch (this.state) {
+            case TowerState.IDLE:
+                if (enemies.length > 0) {
+                    this.state = TowerState.SEARCHING;
+                }
+                break;
+
+            case TowerState.SEARCHING:
+                this._target = this._pickTarget(enemies);
+                
+                if (this._target) {
+                    this.state = TowerState.ATTACKING;
+                } else {
+                    this.state = TowerState.IDLE;
+                }
+                break;
+
+            case TowerState.ATTACKING:
+                if (!this._target || !this._target.alive || this._distance(this._target) > this.range) {
+                    this._target = null;
+                    this.state = TowerState.SEARCHING;
+                    break;
+                }
+                
+                this.state = TowerState.COOLDOWN;
+                this._fireCooldown = 1 / this.fireRate; 
+                return this._createProjectile(this._target); 
+
+            case TowerState.COOLDOWN:
+                this._fireCooldown -= dt;
+                if (this._fireCooldown <= 0) {
+                    this.state = TowerState.SEARCHING; 
+                }
+                break;
         }
 
-        // Pick new target: enemy furthest along the path (closest to exit)
-        if (!this._target) {
-            this._target = this._pickTarget(enemies);
-        }
-
-        // Fire if cooled down
-        if (this._target && this._fireCooldown <= 0) {
-            this._fireCooldown = 1 / this.fireRate;
-            return this._createProjectile(this._target);
-        }
-
-        return null;
+        return null; 
     }
 
     _pickTarget(enemies) {
-        let best     = null;
-        let bestDist = Infinity;   // we use distanceTravelled for "furthest along path"
-        let bestProg = -Infinity;
-
-        for (const e of enemies) {
-            if (!e.alive || e.reached) continue;
-            const d = this._distance(e);
-            if (d <= this.range && e.distanceTravelled > bestProg) {
-                bestProg = e.distanceTravelled;
-                best     = e;
-            }
-        }
-        return best;
+        return this.targetStrategy(enemies, this);
     }
 
     _distance(enemy) {
@@ -146,19 +179,15 @@ class Tower {
             this.x, this.y,
             target,
             this.damage,
-            /* speed px/s */ 350,
+            350,
             this.projColor,
             this.damageType,
-            this.extras,
+            this.extras
         );
     }
 
-    // ─── Rendering ────────────────────────────────────────
+    // ─── HỆ THỐNG ĐỒ HỌA & LƯU TRỮ ─────────
 
-    /**
-     * Draw the tower on the canvas.
-     * @param {CanvasRenderingContext2D} ctx
-     */
     render(ctx) {
         const cs  = CONSTANTS.CELL_SIZE;
         const pad = 4;
@@ -166,7 +195,6 @@ class Tower {
         const y   = this.gridY * cs + pad;
         const s   = cs - pad * 2;
 
-        // Range ring (always or on select)
         if (this.selected) {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
@@ -177,7 +205,6 @@ class Tower {
             ctx.stroke();
         }
 
-        // Tower base (rounded rect)
         ctx.fillStyle   = this.color;
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';
         ctx.lineWidth   = 1.5;
@@ -185,7 +212,6 @@ class Tower {
         ctx.fill();
         ctx.stroke();
 
-        // Level indicator dots
         for (let i = 0; i < this.level; i++) {
             ctx.beginPath();
             ctx.arc(this.x - (this.level - 1) * 4 + i * 8, this.y + s / 2 - 6, 3, 0, Math.PI * 2);
@@ -193,14 +219,12 @@ class Tower {
             ctx.fill();
         }
 
-        // Type letter
         ctx.fillStyle    = 'rgba(255,255,255,0.9)';
         ctx.font         = `bold 14px monospace`;
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.type[0], this.x, this.y - 2);
 
-        // Upgrade glow if selected
         if (this.selected) {
             ctx.strokeStyle = CONSTANTS.COLOR.UI_GOLD;
             ctx.lineWidth   = 2;
@@ -223,13 +247,6 @@ class Tower {
         ctx.closePath();
     }
 
-    // ─── Upgrade/Sell (Local-only) ────────────────────────
-
-    /**
-     * Local upgrade - no API needed in offline mode.
-     */
-
-    /** Serialise for save system. */
     toJSON() {
         return {
             type:  this.type,
@@ -239,3 +256,109 @@ class Tower {
         };
     }
 }
+
+
+// 2. CÁC CLASS CON (Định nghĩa tính chất riêng biệt)
+
+/** Tháp Băng: Khai báo sẵn hiệu ứng làm chậm */
+class FrostTower extends BaseTower {
+    constructor(def, gridX, gridY) {
+        super(def, gridX, gridY);
+        this.damageType = 'magic';
+        this.extras = { slow: { factor: 0.6, duration: 2.0 } };
+    }
+    // FrostTower dùng đạn bình thường nhưng có hiệu ứng slow (đã nằm trong this.extras),
+    // nên không cần ghi đè _createProjectile, nó sẽ tự dùng của BaseTower.
+}
+
+/** Tháp Pháo (AoE): Gây sát thương lan */
+class SplashTower extends BaseTower {
+    constructor(def, gridX, gridY) {
+        super(def, gridX, gridY);
+        this.damageType = 'fire';
+        this.splashRadius = 75; // Bán kính nổ
+    }
+
+    // Ghi đè hàm tạo đạn để nhét thêm biến splashRadius vào extras
+    _createProjectile(target) {
+        return new Projectile(
+            this.x, this.y,
+            target,
+            this.damage,
+            250, // Đạn pháo bay chậm hơn đạn thường (350)
+            this.projColor,
+            this.damageType,
+            { splashRadius: this.splashRadius, ...this.extras } 
+        );
+    }
+}
+
+/** Tháp Hỗ trợ: Tăng sát thương cho tháp đồng minh xung quanh */
+class AuraTower extends BaseTower {
+    constructor(def, gridX, gridY) {
+        super(def, gridX, gridY);
+        this.damageType = 'support';
+        this.buffMultiplier = 1.2; // Tăng 20% sát thương
+        this.color = '#3498db';    // Đổi tháp thành màu xanh dương cho dễ nhận diện
+        
+        // Không dùng cooldown bắn đạn, đổi thành cooldown quét buff (1 giây 1 lần)
+        this.fireRate = 1; 
+    }
+
+    /**
+     * Ghi đè hoàn toàn hàm update. 
+     * Lưu ý: Tháp này không sinh ra đạn nên return null.
+     */
+    update(enemies, dt, allTowers = []) {
+        this._fireCooldown -= dt;
+        
+        if (this._fireCooldown <= 0) {
+            this._fireCooldown = 1 / this.fireRate;
+            this.applyBuff(allTowers);
+        }
+        return null; 
+    }
+
+    applyBuff(allTowers) {
+        for (const ally of allTowers) {
+            // Không tự buff chính mình hoặc tháp buff khác
+            if (ally === this || ally instanceof AuraTower) continue;
+            
+            // Nếu đồng minh nằm trong tầm phủ sóng
+            if (this._distance(ally) <= this.range) {
+                ally.isBuffed = true;
+                ally.buffedDamage = ally.damage * this.buffMultiplier; 
+            } else {
+                ally.isBuffed = false;
+            }
+        }
+    }
+}
+
+
+// 3. FACTORY PATTERN (Trạm phân phối)
+
+/** * Thay vì gọi `new Tower(...)`, hệ thống sẽ gọi Factory này
+ * để nó tự quyết định sinh ra class con nào dựa vào type.
+ */
+class TowerFactory {
+    static create(def, gridX, gridY) {
+        switch (def.type) {
+            case 'ICE':
+                return new FrostTower(def, gridX, gridY);
+            case 'FLAME': 
+            case 'SPLASH':
+                return new SplashTower(def, gridX, gridY);
+            case 'AURA':
+            case 'SUPPORT':
+                return new AuraTower(def, gridX, gridY);
+            default:
+                return new BaseTower(def, gridX, gridY);
+        }
+    }
+}
+
+// Xuất các class ra để dùng ở GameManager.js
+
+export { BaseTower, FrostTower, SplashTower, AuraTower, Tower}
+
