@@ -1,4 +1,15 @@
 /**
+ * MÁY TRẠNG THÁI HỮU HẠN (FSM) CHO THÁP
+ */
+const TowerState = {
+    IDLE: 'IDLE',             // Nghỉ ngơi (Bản đồ không có quái)
+    SEARCHING: 'SEARCHING',   // Đang quét tìm mục tiêu
+    ATTACKING: 'ATTACKING',   // Đã khóa mục tiêu, chuẩn bị nhả đạn
+    COOLDOWN: 'COOLDOWN'      // Vừa bắn xong, đang nạp đạn
+};
+
+
+/**
  * TẬP HỢP CÁC CHIẾN THUẬT NGẮM BẮN (STRATEGY PATTERN)
  */
 const TargetingStrategies = {
@@ -67,6 +78,9 @@ class BaseTower {
         
         // Mặc định tháp mới xây sẽ bắn mục tiêu đi xa nhất
         this.targetStrategy = TargetingStrategies.FIRST;
+        
+        // Trạng thái FSM khởi điểm
+        this.state = TowerState.SEARCHING;
 
         this.color      = CONSTANTS.COLOR[`TOWER_${this.type}`] || '#607030';
         this.projColor  = CONSTANTS.COLOR[`PROJ_${this.type}`]  || '#ffff88';
@@ -75,7 +89,7 @@ class BaseTower {
 
     static _nextId = 0;
 
-    // ─── CÁC HÀM CHỈ SỐ & NÂNG CẤP (Giữ nguyên từ code cũ) ──────────────
+    // ─── CÁC HÀM CHỈ SỐ & NÂNG CẤP ──────────────
 
     get totalInvested() {
         let cost = this.baseCost;
@@ -103,7 +117,7 @@ class BaseTower {
         this.fireRate *= CONSTANTS.UPGRADE_RATE_SCALE;
     }
 
-    // ─── HỆ THỐNG CHIẾN ĐẤU (Đã gắn Strategy Pattern) ─────────────
+    // ─── HỆ THỐNG CHIẾN ĐẤU (FSM + Strategy Pattern) ─────────────
 
     // Hàm để UI gọi khi người chơi bấm nút đổi mục tiêu
     setStrategy(strategyName) {
@@ -113,26 +127,46 @@ class BaseTower {
     }
 
     update(enemies, dt, allTowers = []) {
-        this._fireCooldown = Math.max(0, this._fireCooldown - dt);
+        switch (this.state) {
+            case TowerState.IDLE:
+                if (enemies.length > 0) {
+                    this.state = TowerState.SEARCHING;
+                }
+                break;
 
-        if (this._target && (!this._target.alive || this._distance(this._target) > this.range)) {
-            this._target = null;
+            case TowerState.SEARCHING:
+                this._target = this._pickTarget(enemies);
+                
+                if (this._target) {
+                    this.state = TowerState.ATTACKING;
+                } else {
+                    this.state = TowerState.IDLE;
+                }
+                break;
+
+            case TowerState.ATTACKING:
+                if (!this._target || !this._target.alive || this._distance(this._target) > this.range) {
+                    this._target = null;
+                    this.state = TowerState.SEARCHING;
+                    break;
+                }
+                
+                this.state = TowerState.COOLDOWN;
+                this._fireCooldown = 1 / this.fireRate; 
+                return this._createProjectile(this._target); 
+
+            case TowerState.COOLDOWN:
+                this._fireCooldown -= dt;
+                if (this._fireCooldown <= 0) {
+                    this.state = TowerState.SEARCHING; 
+                }
+                break;
         }
 
-        if (!this._target) {
-            this._target = this._pickTarget(enemies);
-        }
-
-        if (this._target && this._fireCooldown <= 0) {
-            this._fireCooldown = 1 / this.fireRate;
-            return this._createProjectile(this._target);
-        }
-
-        return null;
+        return null; 
     }
 
     _pickTarget(enemies) {
-        // Gọi hàm chiến thuật thay vì dùng if/else hardcode
         return this.targetStrategy(enemies, this);
     }
 
@@ -152,7 +186,7 @@ class BaseTower {
         );
     }
 
-    // ─── HỆ THỐNG ĐỒ HỌA & LƯU TRỮ (Giữ nguyên từ code cũ) ─────────
+    // ─── HỆ THỐNG ĐỒ HỌA & LƯU TRỮ ─────────
 
     render(ctx) {
         const cs  = CONSTANTS.CELL_SIZE;
