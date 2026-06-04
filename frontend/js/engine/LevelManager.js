@@ -55,10 +55,10 @@ class LevelManager {
         const def = this.towerCatalog.find(t => t.type === towerType);
         if (!def) return null;
 
-        const newTower = TowerFactory.create(towerDef, gridX, gridY);
-        this.towers.push(tower);
-        this._towerGrid[this._cellKey(col, row)] = tower;
-        return tower;
+        const newTower = TowerFactory.create(def, col, row);
+        this.towers.push(newTower);
+        this._towerGrid[this._cellKey(col, row)] = newTower;
+        return newTower;
     }
 
     /**

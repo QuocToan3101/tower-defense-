@@ -114,7 +114,16 @@ class GameManager {
         });
 
         eventBus.on('enemy:reached', (enemy) => {
+            console.log('[GM] enemy:reached handler called for', enemy?.name, 'reached=', enemy?.reached, '_gateDamageApplied=', enemy?._gateDamageApplied);
+            // Guard: ensure we only apply gate damage once per enemy instance
+            if (enemy._gateDamageApplied) {
+                console.log('[GM] gate damage already applied for', enemy.name);
+                return;
+            }
+            enemy._gateDamageApplied = true;
+
             this.playerHp -= enemy.damageToPlayer;
+            console.log('[GM] applied gate damage', enemy.damageToPlayer, 'new hp=', this.playerHp);
             this.updateHUD();
             this.log(`${enemy.name} breached the gate. -${enemy.damageToPlayer} HP`);
             if (this.playerHp <= 0) {

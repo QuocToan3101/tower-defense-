@@ -396,5 +396,10 @@ class TowerFactory {
 
 // Xuất các class ra để dùng ở GameManager.js
 
-export { BaseTower, FrostTower, SplashTower, AuraTower, Tower}
+// Expose classes to global scope for non-module script loading
+window.BaseTower = BaseTower;
+window.FrostTower = FrostTower;
+window.SplashTower = SplashTower;
+window.AuraTower = AuraTower;
+window.TowerFactory = TowerFactory;
 
