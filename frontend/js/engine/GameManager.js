@@ -83,6 +83,11 @@ class GameManager {
         this.renderTowerShop();
     }
 
+    /**
+     * [UC-01 Bắt đầu trò chơi] Bước 1.1.6: Load map, khởi tạo Gold và HP.
+     * Được gọi sau khi người chơi chọn level.
+     * Reset trạng thái và khởi tạo các hằng số cấu hình.
+     */
     setupLevel(levelId) {
         this.level = getLevelById(levelId);
         this.currentLevelId = levelId;
@@ -90,13 +95,17 @@ class GameManager {
         this.waveManager = new WaveManager(this.level, this.enemyCatalog);
         this.clearNextWaveTimer();
         this.projectiles = [];
+
+        // Reset lựa chọn tháp
         this.selectedTower = null;
         this.selectedTowerType = null;
         this.hoverCell = null;
 
+        // BR-001-2: Khởi tạo giá trị từ Cấu hình, không được tự ý sửa ở đây.
         this.playerHp = CONSTANTS.STARTING_HP;
         this.gold = CONSTANTS.STARTING_GOLD;
         this.score = 0;
+
         this.gameStarted = false;
         this.isPaused = false;
         this.isGameOver = false;
@@ -204,10 +213,14 @@ class GameManager {
 
     bindControls() {
         document.getElementById('btn-start').addEventListener('click', () => {
-            if (this.gameStarted || this.isGameOver) return;
+            // [UC-01 Bắt đầu trò chơi] Bước 1.1.7 -> 1.1.8: Người chơi chọn New Game / nhấn Start.
+            // Hệ thống đếm ngược (handled by WaveManager) rồi chuyển sang trạng thái Running.
+            if (this.gameStarted || this.isGameOver) return; // Guard clause
+
             this.gameStarted = true;
             document.getElementById('btn-start').classList.add('hidden');
             document.getElementById('btn-pause').classList.remove('hidden');
+
             this.startNextWave();
             this.lastTime = performance.now();
             requestAnimationFrame(this.loopBound);
@@ -220,7 +233,10 @@ class GameManager {
         });
 
         document.getElementById('btn-pause').addEventListener('click', () => {
+            // [UC-01 Bắt đầu trò chơi] Bước 1.2.2: Người dùng nhấn Pause.
+            // Hệ thống dừng tiến trình game và hiển thị menu (Continue, Save, Exit).
             if (!this.gameStarted || this.isGameOver) return;
+
             this.isPaused = true;
             document.getElementById('btn-pause').classList.add('hidden');
             document.getElementById('btn-resume').classList.remove('hidden');
@@ -228,12 +244,15 @@ class GameManager {
         });
 
         document.getElementById('btn-resume').addEventListener('click', () => {
+            // [UC-01 Bắt đầu trò chơi] Bước 1.2.2.1: Người dùng nhấn Continue -> hệ thống tiếp tục chạy.
             if (!this.gameStarted || this.isGameOver) return;
+
             this.isPaused = false;
             document.getElementById('btn-resume').classList.add('hidden');
             document.getElementById('btn-pause').classList.remove('hidden');
+
             this.lastTime = performance.now();
-            requestAnimationFrame(this.loopBound);
+            requestAnimationFrame(this.loopBound); // Tiếp tục loop
         });
 
         document.getElementById('btn-restart').addEventListener('click', () => {
@@ -246,11 +265,12 @@ class GameManager {
 
         const backButton = document.getElementById('btn-back-levels');
         backButton?.addEventListener('click', () => {
+            // [UC-01 Bắt đầu trò chơi] Bước 1.2.2.3: Người dùng nhấn Exit -> Hệ thống thoát màn chơi và quay về danh sách màn chơi.
             if (!this.isGameOver && this.gameStarted && !confirm('Leave this run and return to level select?')) {
                 return;
             }
             document.getElementById('end-modal').classList.add('hidden');
-            this.navigation.goToLevelSelect?.();
+            this.navigation.goToLevelSelect?.(); // Gọi hàm goToLevelSelect() thoát màn chơi
         });
 
         const modalBackButton = document.getElementById('btn-back-levels-modal');
