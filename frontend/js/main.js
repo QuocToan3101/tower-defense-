@@ -54,11 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // [UC-01 - Bắt đầu trò chơi] Bước 1.2.1: Có tiến trình đã lưu – readUnlockedLevel() đọc localStorage, truyền getUnlockedLevel cho LevelSelectScreen
         const readUnlockedLevel = () => {
             const parsed = Number(localStorage.getItem(unlockedLevelKey) || '1');
-            return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 4) : 1;
+            return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 20) : 1;
         };
 
         const unlockNextLevel = (completedLevelId) => {
-            const nextLevel = Math.min(completedLevelId + 1, 4);
+            const nextLevel = Math.min(completedLevelId + 1, 20);
             const current = readUnlockedLevel();
             if (nextLevel > current) {
                 localStorage.setItem(unlockedLevelKey, String(nextLevel));
