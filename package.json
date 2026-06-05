@@ -14,9 +14,7 @@
     "dist:win": "electron-builder --win --publish never",
     "dist:portable": "electron-builder --win -p never --config.win.target=portable"
   },
-  "dependencies": {},
   "devDependencies": {
-    "electron": "^26.0.0",
     "electron-builder": "^24.0.0"
   },
   "build": {
@@ -40,7 +38,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -51,5 +51,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Tower Defense"
     }
+  },
+  "dependencies": {
+    "electron": "^42.3.3"
   }
 }
