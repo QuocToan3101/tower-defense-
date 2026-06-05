@@ -98,6 +98,7 @@ class LevelManager {
     update(enemies, dt) {
         const newProjectiles = [];
         for (const tower of this.towers) {
+            // BƯỚC 3: Mỗi tháp quyết định bắn hay không trong frame này.
             const proj = tower.update(enemies, dt);
             if (proj) newProjectiles.push(proj);
         }

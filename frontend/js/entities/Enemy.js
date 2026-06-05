@@ -56,6 +56,7 @@ class Enemy {
     update(dt) {
         if (!this.alive || this.reached) return;
 
+        // BƯỚC 2: Tính toán tọa độ theo đường đi và kiểm tra chạm căn cứ.
         // Tick slow effect
         if (this.slowTimer > 0) {
             this.slowTimer -= dt;
@@ -80,7 +81,7 @@ class Enemy {
                 this.waypointIndex++;
 
                 if (this.waypointIndex >= this.waypoints.length) {
-                    // Enemy reached the exit
+                    // BƯỚC 2a: Quái chạm đích -> phát sự kiện để GameManager trừ HP.
                     this.reached = true;
                     eventBus.emit('enemy:reached', this);
                     return;
@@ -106,6 +107,7 @@ class Enemy {
     takeDamage(rawDamage, damageType = 'normal') {
         if (!this.alive) return;
 
+        // BƯỚC 3: Áp sát thương từ tháp, nếu HP về 0 thì phát sự kiện bị hạ gục.
         // Magic damage ignores armor
         const armorReduction = (damageType === 'magic') ? 0 : this.armor;
         const finalDamage    = Math.max(1, Math.round(rawDamage * (1 - armorReduction)));
