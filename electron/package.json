@@ -1,7 +1,62 @@
 {
   "name": "towerdefense-electron",
   "version": "0.1.0",
-  "description": "Tower Defense - Standalone Offline Game",
-  "main": "main.js",
-  "private": true
+  "description": "Tower Defense - Standalone Offline Game | Electron App",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "author": "Tower Defense Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:portable": "electron-builder --win -p never --config.win.target=portable",
+    "test:uc3": "node frontend/tests/UC3_test.js",
+    "test": "jest --env=jsdom"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  },
+  "build": {
+    "appId": "com.towerdefense.desktop",
+    "productName": "Tower Defense",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "asar": false,
+    "files": [
+      "electron/main.js",
+      "electron/preload.js",
+      "frontend/**/*",
+      "!frontend/.git",
+      "!frontend/.DS_Store",
+      "!frontend/node_modules"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Tower Defense"
+    }
+  },
+  "dependencies": {
+    "electron": "^42.3.3"
+  }
 }
