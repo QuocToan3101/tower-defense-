@@ -1889,3 +1889,43 @@ html, body {
     flex-direction: column;
     gap: 8px;
 }
+
+/* FULL SCREEN BACKGROUND FOR LEVEL SELECT */
+.scene {
+    background-image:url('../../images/2026-06-06_15-31-45_Lumina_1.png');   /* ← Change path if needed */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+/* Keep existing overlays but make them work with the new background */
+.bg-sky,
+.bg-fog,
+
+
+/* Stronger dark overlay so cards and text remain readable */
+.scene::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+            rgba(4, 8, 20, 0.65),
+            rgba(4, 8, 20, 0.85) 60%,
+            rgba(4, 8, 20, 0.95)
+    );
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Make sure all content stays above the background */
+.scene > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* Optional: Reduce panel transparency so it stands out */
+.panell {
+    background: rgba(4, 8, 20, 0.85);   /* slightly more opaque */
+    border: 1px solid rgba(201, 162, 39, 0.4);
+}
