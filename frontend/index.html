@@ -67,41 +67,7 @@
       margin-top: 20px;
     }
     button:hover { background: #ff6b6b; }
-  </style>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!--  LOADING SCREEN                                        -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<div id="loading-screen" class="loading-screen">
-  <div class="loading-box">
-    <div class="loading-spinner"></div>
-    <p>Initializing Tower Defense...</p>
-  </div>
-  <style>
-    .loading-screen {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(135deg, #0a0c12, #111520);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10000;
-    }
-    .loading-screen.hidden { display: none; }
-    .loading-box {
-      text-align: center;
-      color: #c9a227;
-      font-family: 'Cinzel', serif;
-    }
-    .loading-spinner {
-      border: 3px solid rgba(201, 162, 39, 0.2);
-      border-top: 3px solid #c9a227;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      margin: 0 auto 20px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </div>
 
@@ -129,23 +95,138 @@
     <!-- ═══════════════════════════════════════════════════ -->
     <!--  LEVEL SELECT SCREEN                                -->
     <!-- ═══════════════════════════════════════════════════ -->
+
+
+
     <section id="level-screen" class="screen screen-level" aria-hidden="true">
-        <div class="screen-shell">
-            <div class="screen-topbar">
-                <button class="btn btn-ghost" id="btn-level-back" data-action="back-start">Back</button>
-                <div class="screen-heading">
-                    <p class="screen-kicker">Campaign</p>
-                    <h2>Select Level</h2>
+        <div class="scene">
+            <div class="bg-sky"></div>
+            <div class="stars" id="stars"></div>
+            <div class="moon"></div>
+
+            <!-- Fantasy Background SVG -->
+            <svg class="bg-mountains" viewBox="0 0 1400 500" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="mtGrad1" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#0d1840"/>
+                        <stop offset="100%" stop-color="#060c1e"/>
+                    </linearGradient>
+                    <linearGradient id="mtGrad2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#0a1230"/>
+                        <stop offset="100%" stop-color="#040816"/>
+                    </linearGradient>
+                    <linearGradient id="towerGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#5090ff" stop-opacity="0.9"/>
+                        <stop offset="100%" stop-color="#1020a0" stop-opacity="0.7"/>
+                    </linearGradient>
+                    <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#7040ff" stop-opacity="0.6"/>
+                        <stop offset="100%" stop-color="#3020a0" stop-opacity="0"/>
+                    </linearGradient>
+                    <filter id="glow"><feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    <filter id="softGlow"><feGaussianBlur stdDeviation="15"/></filter>
+                </defs>
+                <polygon points="0,500 100,280 200,350 320,200 440,310 560,180 680,290 800,160 920,270 1040,190 1160,280 1280,210 1400,300 1400,500" fill="url(#mtGrad1)" opacity="0.8"/>
+                <polygon points="0,500 80,380 180,310 280,370 380,280 480,350 600,240 700,320 820,260 940,340 1060,270 1180,350 1300,285 1400,330 1400,500" fill="url(#mtGrad2)"/>
+                <polygon points="0,500 0,440 200,420 400,410 700,430 1000,415 1200,425 1400,420 1400,500" fill="#050912"/>
+                <ellipse cx="700" cy="340" rx="80" ry="60" fill="url(#glowGrad)" filter="url(#softGlow)" opacity="0.8"/>
+                <g transform="translate(670,80)" filter="url(#glow)">
+                    <rect x="20" y="230" width="60" height="90" fill="url(#towerGrad)" opacity="0.85"/>
+                    <rect x="24" y="160" width="52" height="75" fill="url(#towerGrad)" opacity="0.85"/>
+                    <rect x="26" y="110" width="48" height="55" fill="#2040a0" opacity="0.9"/>
+                    <polygon points="50,70 72,112 28,112" fill="#3060e0" opacity="0.95"/>
+                    <ellipse cx="50" cy="68" rx="6" ry="6" fill="#80c0ff" opacity="1"/>
+                    <ellipse cx="50" cy="68" rx="10" ry="10" fill="#80c0ff" opacity="0.3"/>
+                    <rect x="42" y="125" width="16" height="20" rx="4" fill="#a0d4ff" opacity="0.9"/>
+                    <rect x="42" y="175" width="16" height="16" rx="3" fill="#8bbcff" opacity="0.85"/>
+                    <rect x="20" y="155" width="10" height="8" fill="#2040a0" opacity="0.9"/>
+                    <rect x="35" y="155" width="10" height="8" fill="#2040a0" opacity="0.9"/>
+                    <rect x="55" y="155" width="10" height="8" fill="#2040a0" opacity="0.9"/>
+                    <rect x="70" y="155" width="10" height="8" fill="#2040a0" opacity="0.9"/>
+                </g>
+                <circle cx="700" cy="350" r="100" fill="none" stroke="rgba(80,140,255,0.1)" stroke-width="1"/>
+                <circle cx="700" cy="350" r="80" fill="none" stroke="rgba(140,80,255,0.08)" stroke-width="0.5" stroke-dasharray="4 8"/>
+                <!-- Crystals -->
+                <g transform="translate(200,180)" style="animation:floatCrystal 9s ease-in-out infinite alternate">
+                    <polygon points="0,-22 12,0 0,14 -12,0" fill="#5090ff" opacity="0.8"/>
+                    <polygon points="0,-22 12,0 0,14 -12,0" fill="rgba(100,180,255,0.3)" transform="scale(1.4)"/>
+                </g>
+                <g transform="translate(1180,200)" style="animation:floatCrystal 12s ease-in-out infinite reverse alternate">
+                    <polygon points="0,-28 14,0 0,18 -14,0" fill="#9050ff" opacity="0.75"/>
+                    <polygon points="0,-28 14,0 0,18 -14,0" fill="rgba(180,100,255,0.25)" transform="scale(1.5)"/>
+                </g>
+                <g transform="translate(400,150)" style="animation:floatCrystal 7s ease-in-out infinite alternate">
+                    <polygon points="0,-18 10,0 0,11 -10,0" fill="#50d0ff" opacity="0.7"/>
+                </g>
+                <g transform="translate(980,170)" style="animation:floatCrystal 11s ease-in-out infinite reverse">
+                    <polygon points="0,-20 11,0 0,13 -11,0" fill="#c040ff" opacity="0.65"/>
+                </g>
+                <!-- Energy lines -->
+                <line x1="700" y1="148" x2="200" y2="350" stroke="rgba(80,140,255,0.12)" stroke-width="1" style="animation:energyPulse 5s ease-in-out infinite alternate"/>
+                <line x1="700" y1="148" x2="1180" y2="280" stroke="rgba(140,60,255,0.1)" stroke-width="1" style="animation:energyPulse 4s ease-in-out 1s infinite alternate"/>
+            </svg>
+
+            <div class="bg-fog"></div>
+            <div class="bg-vignette"></div>
+            <div class="particles" id="particles"></div>
+
+            <!-- ── MAIN UI PANEL ── -->
+            <div class="panell" id="level-screenn">
+                <div class="panel-corner-bl"></div>
+                <div class="panel-corner-br"></div>
+
+                <!-- Header -->
+                <div class="header">
+                    <div class="header-ornament">
+                        <div class="ornament-gem-sm"></div>
+                        <div class="ornament-line"></div>
+                        <div class="ornament-gem"></div>
+                        <div class="ornament-line"></div>
+                        <div class="ornament-gem-sm"></div>
+                    </div>
+                    <p class="header-sub">Ancient Campaign</p>
+                    <h1>⚔ SELECT LEVEL ⚔</h1>
+                    <div class="header-divider"></div>
                 </div>
-                <div class="screen-status" data-level-status>Unlocked: 1 / 4</div>
-            </div>
 
-            <div id="level-grid" class="level-grid"></div>
+                <!-- Progress / Back Row -->
+                <div class="progress-row">
+                    <button class="back-btn" data-action="back-start">◂ Return</button>
+                    <div class="progress-badge">
+                        <span>🔮</span>
+                        <span data-level-status>Unlocked 1 / 20</span>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar" id="progress-bar" style="width:5%"></div>
+                    </div>
+                </div>
 
-            <div class="level-pagination">
-                <button class="btn btn-ghost" id="btn-prev-page" data-action="prev-page">&lt;</button>
-                <span class="pagination-info" data-pager>Page 1 / 5</span>
-                <button class="btn btn-ghost" id="btn-next-page" data-action="next-page">&gt;</button>
+                <!-- Level Grid -->
+                <div class="grid-wrap">
+                    <div class="level-grid" data-level-grid id="level-grid"></div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="crystal-btn" data-action="prev-page" id="btn-prev-page">
+                        <svg class="crystal-shape" width="44" height="44" viewBox="0 0 44 44">
+                            <polygon points="22,4 40,22 22,40 4,22" fill="rgba(20,30,80,0.9)" stroke="rgba(80,140,255,0.6)" stroke-width="1.5"/>
+                            <polygon points="22,8 36,22 22,36 8,22" fill="rgba(60,100,200,0.3)"/>
+                            <path d="M25 16 L18 22 L25 28" stroke="#80c0ff" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div class="page-display">
+                        <div class="page-num" data-pager>1 / 5</div>
+                        <div class="page-label">Page</div>
+                    </div>
+                    <button class="crystal-btn" data-action="next-page" id="btn-next-page">
+                        <svg class="crystal-shape" width="44" height="44" viewBox="0 0 44 44">
+                            <polygon points="22,4 40,22 22,40 4,22" fill="rgba(20,30,80,0.9)" stroke="rgba(80,140,255,0.6)" stroke-width="1.5"/>
+                            <polygon points="22,8 36,22 22,36 8,22" fill="rgba(60,100,200,0.3)"/>
+                            <path d="M19 16 L26 22 L19 28" stroke="#80c0ff" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </section>
@@ -291,17 +372,17 @@
   // Global error tracking
   window.appErrors = [];
   window.appWarnings = [];
-  
+
   function logError(type, message, data) {
     const entry = { type, message, data, timestamp: new Date().toISOString() };
     window.appErrors.push(entry);
     console.error(`[${type}] ${message}`, data);
-    
+
     // Send to main process if available
     if (window.electronLog?.error) {
       window.electronLog.error(message, data);
     }
-    
+
     // Update error display
     updateErrorDisplay();
   }
@@ -316,12 +397,12 @@
     const errorDisplay = document.getElementById('error-display');
     const errorLog = document.getElementById('error-log');
     const errorMessage = document.getElementById('error-message');
-    
+
     if (window.appErrors.length > 0) {
       errorDisplay.classList.remove('hidden');
       const lastError = window.appErrors[window.appErrors.length - 1];
       errorMessage.textContent = `Error: ${lastError.message}`;
-      
+
       errorLog.innerHTML = window.appErrors
         .map(e => `<div class="error-log-entry error">${e.type}: ${e.message}</div>`)
         .concat(window.appWarnings.map(w => `<div class="error-log-entry warn">⚠️ ${w.message}</div>`))
