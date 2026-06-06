@@ -29,10 +29,15 @@ class ApiClient {
     // ─── Save/Load Endpoints ──────────────────────────────
     // All saves stored in localStorage as JSON array
 
+    // [UC-01 Bắt đầu trò chơi] Bước 1.2.2.2: Người chơi chọn Lưu game
+    // Hệ thống đóng gói trạng thái hiện tại (HP, Gold, Wave, Towers...)
+    // và lưu vào localStorage.
     async saveGame(saveName, playerHp, gold, currentWave, levelId, towersJson) {
         const saves = this._loadSaves();
         const saveId = String(Date.now());
-        saves.push({
+
+        // Tạo object lưu trữ trạng thái game
+        const newSave = {
             id: saveId,
             name: saveName,
             playerHp,
@@ -41,18 +46,27 @@ class ApiClient {
             levelId,
             towersJson,
             timestamp: Date.now()
-        });
+        };
+
+        saves.push(newSave); // push vào mảng saves
+        // Ghi đè lại mảng vào localStorage
         localStorage.setItem('td_saves', JSON.stringify(saves));
+
         return { success: true, data: { saveId } };
     }
 
+    // [UC-01 Bắt đầu trò chơi] Bước 1.2.1: Hiển thị danh sách bản lưu
+    // listSaves() đọc localStorage 'td_saves' để trả về giao diện
     async listSaves() {
         return { success: true, data: this._loadSaves() };
     }
 
+    // [UC-01 Bắt đầu trò chơi] Bước 1.2.1: Load bản lưu
+    // loadSave(id) tìm kiếm trong mảng saves và trả về dữ liệu tương ứng
     async loadSave(saveId) {
         const saves = this._loadSaves();
         const save = saves.find(s => s.id === saveId);
+
         if (!save) {
             return { success: false, message: 'Save not found' };
         }
