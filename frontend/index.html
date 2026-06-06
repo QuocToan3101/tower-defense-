@@ -67,41 +67,7 @@
       margin-top: 20px;
     }
     button:hover { background: #ff6b6b; }
-  </style>
-</div>
 
-<!-- ═══════════════════════════════════════════════════════ -->
-<!--  LOADING SCREEN                                        -->
-<!-- ═══════════════════════════════════════════════════════ -->
-<div id="loading-screen" class="loading-screen">
-  <div class="loading-box">
-    <div class="loading-spinner"></div>
-    <p>Initializing Tower Defense...</p>
-  </div>
-  <style>
-    .loading-screen {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(135deg, #0a0c12, #111520);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 10000;
-    }
-    .loading-screen.hidden { display: none; }
-    .loading-box {
-      text-align: center;
-      color: #c9a227;
-      font-family: 'Cinzel', serif;
-    }
-    .loading-spinner {
-      border: 3px solid rgba(201, 162, 39, 0.2);
-      border-top: 3px solid #c9a227;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      margin: 0 auto 20px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </div>
 
@@ -129,23 +95,68 @@
     <!-- ═══════════════════════════════════════════════════ -->
     <!--  LEVEL SELECT SCREEN                                -->
     <!-- ═══════════════════════════════════════════════════ -->
+
+
+
     <section id="level-screen" class="screen screen-level" aria-hidden="true">
-        <div class="screen-shell">
-            <div class="screen-topbar">
-                <button class="btn btn-ghost" id="btn-level-back" data-action="back-start">Back</button>
-                <div class="screen-heading">
-                    <p class="screen-kicker">Campaign</p>
-                    <h2>Select Level</h2>
+        <div class="scene">
+            <!-- ── MAIN UI PANEL ── -->
+            <div class="panell" id="level-screenn">
+                <div class="panel-corner-bl"></div>
+                <div class="panel-corner-br"></div>
+
+                <!-- Header -->
+                <div class="header">
+                    <div class="header-ornament">
+                        <div class="ornament-gem-sm"></div>
+                        <div class="ornament-line"></div>
+                        <div class="ornament-gem"></div>
+                        <div class="ornament-line"></div>
+                        <div class="ornament-gem-sm"></div>
+                    </div>
+                    <p class="header-sub">Ancient Campaign</p>
+                    <h1>⚔ SELECT LEVEL ⚔</h1>
+                    <div class="header-divider"></div>
                 </div>
-                <div class="screen-status" data-level-status>Unlocked: 1 / 4</div>
-            </div>
 
-            <div id="level-grid" class="level-grid"></div>
+                <!-- Progress / Back Row -->
+                <div class="progress-row">
+                    <button class="back-btn" data-action="back-start">◂ Return</button>
+                    <div class="progress-badge">
+                        <span>🔮</span>
+                        <span data-level-status>Unlocked 1 / 20</span>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar" id="progress-bar" style="width:5%"></div>
+                    </div>
+                </div>
 
-            <div class="level-pagination">
-                <button class="btn btn-ghost" id="btn-prev-page" data-action="prev-page">&lt;</button>
-                <span class="pagination-info" data-pager>Page 1 / 5</span>
-                <button class="btn btn-ghost" id="btn-next-page" data-action="next-page">&gt;</button>
+                <!-- Level Grid -->
+                <div class="grid-wrap">
+                    <div class="level-grid" data-level-grid id="level-grid"></div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination">
+                    <button class="crystal-btn" data-action="prev-page" id="btn-prev-page">
+                        <svg class="crystal-shape" width="44" height="44" viewBox="0 0 44 44">
+                            <polygon points="22,4 40,22 22,40 4,22" fill="rgba(20,30,80,0.9)" stroke="rgba(80,140,255,0.6)" stroke-width="1.5"/>
+                            <polygon points="22,8 36,22 22,36 8,22" fill="rgba(60,100,200,0.3)"/>
+                            <path d="M25 16 L18 22 L25 28" stroke="#80c0ff" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div class="page-display">
+                        <div class="page-num" data-pager>1 / 5</div>
+                        <div class="page-label">Page</div>
+                    </div>
+                    <button class="crystal-btn" data-action="next-page" id="btn-next-page">
+                        <svg class="crystal-shape" width="44" height="44" viewBox="0 0 44 44">
+                            <polygon points="22,4 40,22 22,40 4,22" fill="rgba(20,30,80,0.9)" stroke="rgba(80,140,255,0.6)" stroke-width="1.5"/>
+                            <polygon points="22,8 36,22 22,36 8,22" fill="rgba(60,100,200,0.3)"/>
+                            <path d="M19 16 L26 22 L19 28" stroke="#80c0ff" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </section>
@@ -291,17 +302,17 @@
   // Global error tracking
   window.appErrors = [];
   window.appWarnings = [];
-  
+
   function logError(type, message, data) {
     const entry = { type, message, data, timestamp: new Date().toISOString() };
     window.appErrors.push(entry);
     console.error(`[${type}] ${message}`, data);
-    
+
     // Send to main process if available
     if (window.electronLog?.error) {
       window.electronLog.error(message, data);
     }
-    
+
     // Update error display
     updateErrorDisplay();
   }
@@ -316,12 +327,12 @@
     const errorDisplay = document.getElementById('error-display');
     const errorLog = document.getElementById('error-log');
     const errorMessage = document.getElementById('error-message');
-    
+
     if (window.appErrors.length > 0) {
       errorDisplay.classList.remove('hidden');
       const lastError = window.appErrors[window.appErrors.length - 1];
       errorMessage.textContent = `Error: ${lastError.message}`;
-      
+
       errorLog.innerHTML = window.appErrors
         .map(e => `<div class="error-log-entry error">${e.type}: ${e.message}</div>`)
         .concat(window.appWarnings.map(w => `<div class="error-log-entry warn">⚠️ ${w.message}</div>`))

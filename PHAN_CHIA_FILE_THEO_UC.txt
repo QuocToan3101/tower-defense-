@@ -1,0 +1,127 @@
+PHAN CHIA FILE HIEN TAI THEO USE CASE (UC1 - UC5)
+Du an: towerdefense
+
+Ghi chu nhanh:
+- Phan chia dua theo so do UC: UC1 Game Flow, UC2 Quan ly Thap,
+  UC3 He thong Chien dau, UC4 Tai nguyen & UI, UC5 Level & Do kho.
+- Mot so file la "dung chung" giua nhieu UC (ghi ro o muc CUOI).
+
+============================================================
+UC1 - QUAN LY GAME FLOW (Thanh vien 1)
+============================================================
+Muc tieu:
+- Start game, Pause/Resume, Restart, Save/Load game.
+
+File chinh:
+- frontend/js/main.js
+- frontend/js/engine/GameManager.js
+- frontend/js/screens/StartScreen.js
+- frontend/js/components/ScreenManager.js
+
+File lien quan Save/Load:
+- frontend/js/api/ApiClient.js
+
+File desktop wrapper ho tro chay app:
+- electron/main.js
+- electron/preload.js
+
+============================================================
+UC2 - QUAN LY THAP (Thanh vien 2)
+============================================================
+Muc tieu:
+- Dat thap, nang cap, ban thap, xem pham vi.
+
+File chinh:
+- frontend/js/entities/Tower.js
+- frontend/js/engine/LevelManager.js
+- frontend/js/entities/Projectile.js
+
+File du lieu lien quan thap:
+- frontend/js/data/MockCatalog.js
+- frontend/js/data/GameBalanceConfig.js
+
+============================================================
+UC3 - HE THONG CHIEN DAU (Thanh vien 3)
+============================================================
+Muc tieu:
+- Thap tu dong tan cong, tinh sat thuong, sinh ke dich theo wave,
+  dich di chuyen theo duong.
+
+File chinh:
+- frontend/js/entities/Enemy.js
+- frontend/js/engine/WaveManager.js
+- frontend/js/engine/GameManager.js
+- frontend/js/entities/Projectile.js
+
+File du lieu/chien dau lien quan:
+- frontend/js/data/MockCatalog.js
+- frontend/js/data/GameBalanceConfig.js
+
+============================================================
+UC4 - TAI NGUYEN & UI (Thanh vien 4)
+============================================================
+Muc tieu:
+- Nhan vang khi tieu diet dich, hien thi HP, Wave, Gold, HUD.
+
+File chinh:
+- frontend/js/ui/UIManager.js
+- frontend/js/screens/GameScreen.js
+- frontend/css/style.css
+- frontend/index.html
+
+File ho tro su kien cap nhat UI:
+- frontend/js/engine/EventBus.js
+- frontend/js/Constants.js
+
+============================================================
+UC5 - LEVEL & DO KHO (Thanh vien 5)
+============================================================
+Muc tieu:
+- Chon level, tang do kho theo wave, kiem tra thang/thua,
+  hien thi man hinh ket qua.
+
+File chinh:
+- frontend/js/screens/LevelSelectScreen.js
+- frontend/js/data/maps.js
+- frontend/js/engine/LevelData.js
+- frontend/js/engine/WaveManager.js
+- frontend/js/engine/GameManager.js
+
+CAC FILE DUNG CHUNG / CO THE CHAM CHEO
+============================================================
+- frontend/js/engine/GameManager.js (UC1, UC3, UC5)
+- frontend/js/engine/WaveManager.js (UC3, UC5)
+- frontend/js/entities/Projectile.js (UC2, UC3)
+- frontend/js/data/MockCatalog.js (UC2, UC3)
+- frontend/js/data/GameBalanceConfig.js (UC2, UC3, UC5)
+
+============================================================
+SYSTEM ARCHITECTURE
+============================================================
+Tong quan:
+- Electron la lop vo desktop, khoi dong ung dung va nap frontend.
+- Frontend vanilla JavaScript dam nhan toan bo giao dien va logic game.
+- Du lieu va trang thai game chay theo mo hinh layer: UI -> Screen -> Engine -> Entity -> Data.
+
+Cac lop chinh:
+- Desktop layer: electron/main.js, electron/preload.js
+- Entry layer: frontend/index.html, frontend/js/main.js
+- UI layer: frontend/css/style.css, frontend/js/ui/UIManager.js
+- Screen layer: frontend/js/screens/*, frontend/js/components/ScreenManager.js
+- Engine layer: frontend/js/engine/*
+- Entity layer: frontend/js/entities/*
+- Data layer: frontend/js/data/*
+
+Dong chay du lieu:
+1) Electron main mo cua so app va load frontend/index.html.
+2) frontend/js/main.js khoi tao game, screen manager va game manager.
+3) Screen hien thi Start/LevelSelect/GameScreen theo trang thai.
+4) GameManager dieu phoi wave, level, combat, save/load va su kien.
+5) UIManager lang nghe su kien va cap nhat HP, Gold, Wave, Score.
+6) Tower, Enemy, Projectile xu ly logic chien dau trong vong lap game.
+
+Phan tach trach nhiem:
+- UI khong xu ly combat truc tiep.
+- Engine khong phu thuoc CSS.
+- Entity chi nam logic doi tuong game.
+- Data chi chua cau hinh, ban do, danh muc va balance.
