@@ -119,30 +119,29 @@ class LevelSelectScreen {
     }
 
     _makeArtSVG(level) {
-        const idx     = (level.id - 1) % this.ART_PALETTES.length;
-        const [c0,c1,c2,acc] = this.ART_PALETTES[idx];
-        const glyph   = this.ART_GLYPHS[(level.id - 1) % this.ART_GLYPHS.length];
-        // Unique gradient IDs per level to avoid SVG conflicts
+        const idx = (level.id - 1) % this.ART_PALETTES.length;
+        const [c0, c1, c2, acc] = this.ART_PALETTES[idx];
+        const glyph = this.ART_GLYPHS[(level.id - 1) % this.ART_GLYPHS.length];
         const gid = `ag_lvl_${level.id}`;
         const rid = `ar_lvl_${level.id}`;
-        return `<svg width="100%" height="100%" viewBox="0 0 400 100"
-      xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%"   stop-color="${c0}"/>
-          <stop offset="50%"  stop-color="${c1}"/>
-          <stop offset="100%" stop-color="${c2}"/>
-        </linearGradient>
-        <radialGradient id="${rid}" cx="70%" cy="40%">
-          <stop offset="0%"   stop-color="${acc}" stop-opacity="0.4"/>
-          <stop offset="100%" stop-color="${acc}" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <rect width="400" height="100" fill="url(#${gid})"/>
-      <rect width="400" height="100" fill="url(#${rid})"/>
-      <text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle"
-            font-size="38" opacity="0.18">${glyph}</text>
-    </svg>`;
+
+        return `<svg width="100%" height="100%" viewBox="0 0 400 160" 
+                    xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <linearGradient id="${gid}" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="${c0}"/>
+                    <stop offset="100%" stop-color="${c2}"/>
+                </linearGradient>
+                <radialGradient id="${rid}" cx="50%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="${acc}" stop-opacity="0.55"/>
+                    <stop offset="100%" stop-color="${acc}" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+            <rect width="400" height="160" fill="url(#${gid})"/>
+            <rect width="400" height="160" fill="url(#${rid})"/>
+            <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle"
+                  font-size="68" opacity="0.75" fill="#fff">${glyph}</text>
+        </svg>`;
     }
 
     _diffClass(d) {
@@ -150,71 +149,61 @@ class LevelSelectScreen {
         return map[(d || '').toLowerCase()] || 'diff-normal';
     }
 
-    // ─────────────────────────────────────────
-    //  Public API
-    // ─────────────────────────────────────────
-
     render() {
-        const levels        = getAllMaps();
+        const levels = getAllMaps();
         const unlockedLevel = this.getUnlockedLevel();
-        const totalPages    = Math.ceil(levels.length / this.levelsPerPage);
+        const totalPages = Math.ceil(levels.length / this.levelsPerPage);
 
-        // Update status text
         if (this.levelStatus) {
-            this.levelStatus.textContent =
-                `Unlocked ${Math.min(unlockedLevel, levels.length)} / ${levels.length}`;
+            this.levelStatus.textContent = `Unlocked ${Math.min(unlockedLevel, levels.length)} / ${levels.length}`;
         }
-
-        // Update progress bar
         if (this.progressBar) {
             const pct = Math.round((Math.min(unlockedLevel, levels.length) / levels.length) * 100);
             this.progressBar.style.width = pct + '%';
         }
 
-        // Pagination controls
         if (this.prevButton) this.prevButton.disabled = this.currentPage === 0;
         if (this.nextButton) this.nextButton.disabled = this.currentPage === totalPages - 1;
-        if (this.pagerInfo)  this.pagerInfo.textContent = `${this.currentPage + 1} / ${totalPages}`;
+        if (this.pagerInfo) this.pagerInfo.textContent = `${this.currentPage + 1} / ${totalPages}`;
 
         if (!this.levelGrid) return;
 
-        // Slice current page
-        const startIdx   = this.currentPage * this.levelsPerPage;
+        const startIdx = this.currentPage * this.levelsPerPage;
         const pageLevels = levels.slice(startIdx, startIdx + this.levelsPerPage);
 
         this.levelGrid.innerHTML = pageLevels.map((level) => {
             const locked = level.id > unlockedLevel;
-            const dc     = this._diffClass(level.difficulty);
-            const di     = this.DIFF_ICONS[level.difficulty] || '';
+            const dc = this._diffClass(level.difficulty);
+            const di = this.DIFF_ICONS[level.difficulty] || '';
 
             return `
-        <div class="level-card${locked ? ' is-locked' : ''}"
-             data-level-id="${level.id}"
-             data-locked="${locked}">
+                <div class="level-card${locked ? ' is-locked' : ''}" 
+                     data-level-id="${level.id}" 
+                     data-locked="${locked}">
+                    
+                    <!-- FULL-WIDTH ICON BANNER -->
+                    <div class="card-icon">
+                        ${this._makeArtSVG(level)}
+                    </div>
 
-          <div class="card-art">
-            <div class="card-art-bg">${this._makeArtSVG(level)}</div>
-            <div class="card-art-overlay"></div>
-          </div>
+                    <div class="card-body">
+                        <div class="card-top">
+                            <span class="card-level-tag">LEVEL ${level.id}</span>
+                            <span class="card-diff ${dc}">${di} ${level.difficulty}</span>
+                        </div>
+                        <div class="card-title">${level.name}</div>
+                        <div class="card-meta-row">
+                            <span class="card-meta">🌊 ${level.totalWaves} Waves</span>
+                        </div>
+                        ${!locked ? '<button class="play-btn">✕ PLAY</button>' : ''}
+                    </div>
 
-          <div class="card-body">
-            <div class="card-top">
-              <span class="card-level-tag">✦ Level ${level.id} ✦</span>
-              <span class="card-diff ${dc}">${di} ${level.difficulty}</span>
-            </div>
-            <div class="card-title">${level.name}</div>
-            <div class="card-meta-row">
-              <span class="card-meta">🌊 ${level.totalWaves} Waves</span>
-            </div>
-            ${!locked ? '<div class="play-btn">⚔ PLAY</div>' : ''}
-          </div>
-
-          ${locked ? `
-            <div class="card-overlay">
-              <div class="lock-icon">🔒</div>
-              <div class="lock-chains">— Sealed —</div>
-            </div>` : ''}
-        </div>`;
+                    ${locked ? `
+                    <div class="card-overlay">
+                        <div class="lock-icon">🔒</div>
+                        <div class="lock-chains">— Sealed —</div>
+                    </div>` : ''}
+                </div>`;
         }).join('');
     }
 
