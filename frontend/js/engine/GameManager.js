@@ -121,12 +121,14 @@ class GameManager {
 
     bindEvents() {
         eventBus.on('enemy:killed', (enemy) => {
+            // BƯỚC 3a: Quái bị hạ gục -> cộng thưởng và cập nhật HUD.
             this.gold += enemy.goldReward;
             this.score += enemy.goldReward * 10;
             this.updateHUD();
         });
 
         eventBus.on('enemy:reached', (enemy) => {
+            // BƯỚC 2a: Quái lọt tới căn cứ -> trừ HP căn cứ và cập nhật HUD.
             // Guard: ensure we only apply gate damage once per enemy instance
             try {
                 if (this._gateDamaged.has(enemy)) return;
@@ -145,6 +147,7 @@ class GameManager {
         });
 
         eventBus.on('wave:started', (wave) => {
+            // BƯỚC 1: Bắt đầu wave mới, đồng bộ HUD và thông báo cho người chơi.
             this.updateHUD();
             this.updateWaveInfo(`Wave ${wave} has begun. Hold the line.`);
             this.showWaveAnnouncement(`Wave ${wave}`);
@@ -153,6 +156,7 @@ class GameManager {
         });
 
         eventBus.on('wave:complete', (wave) => {
+            // BƯỚC 1: Wave kết thúc -> thưởng vàng, mở nút sang wave tiếp theo.
             this.gold += CONSTANTS.GOLD_PER_WAVE;
             this.updateHUD();
             this.log(`Wave ${wave} complete. +${CONSTANTS.GOLD_PER_WAVE} bonus gold.`);
@@ -383,8 +387,10 @@ class GameManager {
     }
 
     update(dt) {
+        // BƯỚC 1: WaveManager sinh quái và cập nhật trạng thái wave.
         this.waveManager.update(dt);
 
+        // BƯỚC 3: Tháp quét mục tiêu, tạo đạn mới và cập nhật projectiles.
         const newShots = this.levelManager.update(this.waveManager.aliveEnemies, dt);
         if (newShots.length) this.projectiles.push(...newShots);
 
