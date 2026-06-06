@@ -30,6 +30,7 @@ describe('GameManager Core Logic', () => {
     let GameManagerClass;
 
     beforeAll(() => {
+        HTMLCanvasElement.prototype.getContext = jest.fn().mockReturnValue({ clearRect: jest.fn() });
         // Lùi về tận thư mục gốc của project (tower-defense-)
         const projectRoot = path.resolve(__dirname, '../../');
 
