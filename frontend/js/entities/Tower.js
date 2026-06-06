@@ -135,6 +135,7 @@ class BaseTower {
                 break;
 
             case TowerState.SEARCHING:
+                // BƯỚC 3: Quét mục tiêu trong tầm bắn.
                 this._target = this._pickTarget(enemies);
                 
                 if (this._target) {
@@ -151,6 +152,7 @@ class BaseTower {
                     break;
                 }
                 
+                // BƯỚC 3: Nhả đạn và trả projectile về GameManager.
                 this.state = TowerState.COOLDOWN;
                 this._fireCooldown = 1 / this.fireRate; 
                 return this._createProjectile(this._target); 

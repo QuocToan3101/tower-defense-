@@ -57,7 +57,7 @@ class WaveManager {
     update(dt) {
         if (!this.waveActive) return;
 
-        // ── Spawning ────────────────────────────────────
+        // BƯỚC 1: Sinh quái theo nhịp thời gian của wave hiện tại.
         if (!this._allSpawned) {
             this._spawnTimer -= dt;
             if (this._spawnTimer <= 0 && this._spawnQueue.length > 0) {
@@ -70,12 +70,12 @@ class WaveManager {
             }
         }
 
-        // ── Enemy movement ──────────────────────────────
+        // BƯỚC 2: Cập nhật di chuyển của toàn bộ quái đang tồn tại.
         for (const enemy of this.enemies) {
             enemy.update(dt);
         }
 
-        // ── Wave complete check ─────────────────────────
+        // BƯỚC 1: Khi hết quái sống và đã spawn xong thì kết thúc wave.
         if (this.isWaveFinished && !this.waveComplete) {
             this.waveComplete = true;
             this.waveActive   = false;

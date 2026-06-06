@@ -12,7 +12,8 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win --publish never",
-    "dist:portable": "electron-builder --win -p never --config.win.target=portable"
+    "dist:portable": "electron-builder --win -p never --config.win.target=portable",
+    "test:uc3": "node frontend/tests/UC3_test.js"
   },
   "devDependencies": {
     "electron-builder": "^24.0.0"
