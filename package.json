@@ -17,6 +17,7 @@
     "test": "jest test/**/*.test.js --env=jsdom"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "electron-builder": "^24.0.0",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
