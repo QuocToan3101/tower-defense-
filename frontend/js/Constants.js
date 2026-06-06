@@ -16,9 +16,9 @@ const CONSTANTS = Object.freeze({
     GRID_ROWS:      14,
 
     // ─── Game Balance (REBALANCED for new players) ─────────
-    STARTING_HP:    35,         // was 20 - learning buffer for waves 3-4
-    STARTING_GOLD:  400,        // was 300 - enable strategic tower choices
-    GOLD_PER_WAVE:  50,         // was 30 - progression feels rewarding
+    STARTING_HP:    32,         // tuned: still forgiving, less over-safe early game
+    STARTING_GOLD:  380,        // tuned: enough for flexible openings without snowballing
+    GOLD_PER_WAVE:  45,         // tuned: steadier economy progression
 
     // ─── Tower Upgrade Scaling ─────────────────────────────
     UPGRADE_DMG_SCALE:   1.25,  // was 1.40 - smoother progression per level
@@ -29,10 +29,10 @@ const CONSTANTS = Object.freeze({
     // ─── Enemy Scaling per Wave ────────────────────────────
     ENEMY_HP_SCALE:    1.05,    // reduced further to soften mid/late-game HP scaling
     ENEMY_SPEED_SCALE: 1.04,    // was 1.05
-    ENEMY_COUNT_SCALE: 1.12,    // was 1.15 - less exponential growth
+    ENEMY_COUNT_SCALE: 1.10,    // tuned: smoother pacing after restoring full enemy roster
 
     // ─── Wave Timings ──────────────────────────────────────
-    SPAWN_INTERVAL_MS:   1200,  // was 800ms - less rushed feeling, time to react
+    SPAWN_INTERVAL_MS:   1100,  // tuned: keeps pressure while preserving reaction time
     BETWEEN_WAVE_MS:    3000,   // break between waves
 
     // ─── Colours (Canvas rendering) ───────────────────────
