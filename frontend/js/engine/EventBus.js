@@ -3,7 +3,30 @@
  * Simple publish-subscribe event bus for decoupling game subsystems.
  * Usage:
  *   EventBus.on('enemy:killed', handler);
+ 
+ 
+ 
+ 
  *   EventBus.emit('enemy:killed', { gold: 10 });
+ */
+ 
+ 
+ 
+ /* 
+ 
+ 4.1.3 & 4.2.1  bus event update resource
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
  */
 class EventBus {
     constructor() {
