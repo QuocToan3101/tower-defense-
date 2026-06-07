@@ -102,20 +102,21 @@ class LevelSelectScreen {
         this.levelGrid?.addEventListener('click', (event) => {
             const button = event.target.closest('[data-level-id]');
 
-            // [EF 5.1.3.1] Nếu màn chơi bị khóa, không cho phép bắt đầu chơi ở màn này.
-            // [BR 5.1.4.3] Người chơi không thể truy cập vào màn chơi chưa được mở khóa.
+            // [UC-5.1 AF 5.1.2.1] Người chơi chọn màn chơi chưa mở khóa:
+            // Con trỏ chuột trở thành biểu tượng không thể chọn (đã xử lý qua CSS cursor: not-allowed)
+            // và hệ thống không cho phép bắt đầu màn chơi này.
             if (!button || button.dataset.locked === 'true') return;
 
-            // [BF 5.1.1.3] Người chơi chọn màn chơi (level) trong danh sách.
-            // [BF 5.1.1.4] Hệ thống hiển thị thông báo xác nhận lựa chọn (handled by onSelectLevel caller).
-            // [BF 5.1.1.5] Người chọn "Xác nhận" -> Có chọn => flash hiệu ứng phản hồi thị giác.
+            // [UC-5.1 BF 5.1.1.3] Người chơi chọn màn chơi (level) trong danh sách.
+            // Hiển thị hiệu ứng flash phản hồi thị giác để xác nhận lựa chọn của người chơi.
             this._flashCard(button);
 
-            // [BF 5.1.1.6] Hệ thống ghi vào log màn chơi được lựa chọn, thời điểm lựa chọn.
-            // [BR 5.1.4.5] Mỗi lần người chơi chọn phải được ghi log để phục vụ thống kê và kiểm thử.
+            // [UC-5.1 BR 5.1.4.5] Mỗi lần người chơi chọn màn phải được ghi log
+            // để phục vụ thống kê và kiểm thử, bao gồm ID màn và thời điểm chọn.
+            // [UC-5.1 NFR 5.1.5.3] Log phải được ghi đầy đủ và không bị mất khi xảy ra lỗi.
             console.log(`[LOG] Level selected: ${button.dataset.levelId} at ${new Date().toISOString()}`);
 
-            // [BF 5.1.1.7] Hệ thống bắt đầu tải và khởi động màn chơi.
+            // [UC-5.1 BF 5.1.1.4] Hệ thống bắt đầu tải và khởi động màn chơi được chọn.
             setTimeout(() => this.onSelectLevel(Number(button.dataset.levelId)), 220);
         });
     }
@@ -163,16 +164,18 @@ class LevelSelectScreen {
     }
 
     render() {
-        // [BF 5.1.1.1] Hệ thống nhận danh sách các màn chơi (levels) từ dữ liệu.
+        // [UC-5.1 BF 5.1.1.1] Hệ thống lấy danh sách các màn chơi (levels) từ dữ liệu.
         const levels = getAllMaps();
 
-        // [BF 5.1.1.2] Hệ thống hiển thị các màn chơi (level) trên giao diện.
-        // unlockedLevel xác định card nào được mở (unlocked) hay bị khóa (locked).
+        // [UC-5.1 BF 5.1.1.2] Hệ thống hiển thị các màn chơi (level) trên giao diện.
+        // unlockedLevel xác định màn nào được mở (unlocked) hay bị khóa (locked).
+        // [UC-5.1 BR 5.1.4.4] Điều kiện mở khóa: phải hoàn thành màn chơi trước đó.
         const unlockedLevel = this.getUnlockedLevel();
         const totalPages = Math.ceil(levels.length / this.levelsPerPage);
 
-        // [BF 5.1.1.2] Cập nhật nhãn trạng thái và thanh tiến trình theo số màn đã mở.
-        // [BR 5.1.4.1] Mỗi ô hiển thị thông tin: tên màn, độ khó, trạng thái (Đã mở/Đang khóa).
+        // [UC-5.1 BR 5.1.4.1] Mỗi ô hiển thị thông tin: tên màn, độ khó tổng quát
+        // và trạng thái màn (Đã mở / Đang khóa).
+        // Cập nhật nhãn trạng thái và thanh tiến trình theo số màn đã mở.
         if (this.levelStatus) {
             this.levelStatus.textContent = `Unlocked ${Math.min(unlockedLevel, levels.length)} / ${levels.length}`;
         }
@@ -190,10 +193,15 @@ class LevelSelectScreen {
         const startIdx = this.currentPage * this.levelsPerPage;
         const pageLevels = levels.slice(startIdx, startIdx + this.levelsPerPage);
 
+        // [UC-5.1 NFR 5.1.5.1] Danh sách màn chơi phải được hiển thị trong vòng 1 giây
+        // sau khi người dùng kích hoạt use case.
+        // [UC-5.1 NFR 5.1.5.2] Giao diện trực quan, thân thiện, hỗ trợ cả màn hình cảm ứng
+        // lẫn tương tác nhấp chuột.
         this.levelGrid.innerHTML = pageLevels.map((level) => {
-            // [BF 5.1.1.2] Xác định trạng thái mở/khóa theo unlockedLevel.
-            // [BR 5.1.4.2] Màn chưa mở khóa hiển thị ô màu xám + biểu tượng ô khóa.
-            // [BR 5.1.4.3] Người chơi không thể truy cập vào những màn chơi chưa được mở khóa.
+            // [UC-5.1 BR 5.1.4.2] Các màn chơi chưa mở khóa phải được thể hiện rõ ràng
+            // trên giao diện (overlay khóa + nhãn "Sealed").
+            // [UC-5.1 BR 5.1.4.3] Người chơi không thể truy cập vào những màn chưa được mở khóa:
+            // data-locked="true" được dùng để chặn sự kiện click tại _bindEvents.
             const locked = level.id > unlockedLevel;
             const dc = this._diffClass(level.difficulty);
             const di = this.DIFF_ICONS[level.difficulty] || '';
