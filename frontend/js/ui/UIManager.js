@@ -2,7 +2,7 @@ class UIManager {
     getElement(id) {
         return document.getElementById(id);
     }
-
+//  4.1.6 ; 4.3.1 update HUD
     updateHUD(hp, gold, wave, maxWaves, score) {
         // BƯỚC 2a / 3a: Đồng bộ HUD sau khi trừ HP hoặc cộng thưởng từ quái.
         this.getElement('hud-hp').textContent = hp;
@@ -18,3 +18,33 @@ class UIManager {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
