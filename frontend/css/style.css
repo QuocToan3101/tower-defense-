@@ -497,7 +497,7 @@ html, body {
         gap: 8px;
     }
 }
-
+/*•	4.1.1 Handle activity*/
 /* ─── Utility ──────────────────────────────────────────────── */
 .hidden    { display: none !important; }
 .muted     { color: var(--text-muted); font-style: italic; font-size: 0.85rem; }
@@ -563,6 +563,26 @@ html, body {
     color: var(--text-gold);
 }
 .btn-gold:hover { box-shadow: var(--shadow-gold); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .btn-full { width: 100%; }
 
@@ -642,6 +662,19 @@ html, body {
     overflow: hidden;
     border: 1px solid var(--border-dim);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .tab-btn {
     flex: 1;

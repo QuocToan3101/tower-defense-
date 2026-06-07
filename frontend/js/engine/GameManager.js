@@ -300,7 +300,7 @@ class GameManager {
             });
         });
     }
-	//4.1.1 luồng chọn tháp để mua/xây
+	//4.1.1 luồng chọn tháp để mua/xây, nâng cấp tháp
     bindCanvasInput() {
         this.canvas.addEventListener('mousemove', (e) => {
             const cell = this.mouseToCell(e);
