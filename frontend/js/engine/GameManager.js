@@ -37,7 +37,7 @@ class GameManager {
 
         this.towerCatalog = [];
         this.enemyCatalog = [];
-        // Track which enemy instances have applied gate damage
+        // 4.3.1 và 4.3.2 ở nhánh quái chạm base làm tụt HP
         this._gateDamaged = new WeakSet();
 
         this.bindEvents();
@@ -82,7 +82,7 @@ class GameManager {
 
         this.renderTowerShop();
     }
-
+	
     /**
      * [UC-01 Bắt đầu trò chơi] Bước 1.1.6: Load map, khởi tạo Gold và HP.
      * Được gọi sau khi người chơi chọn level.
@@ -594,43 +594,6 @@ class GameManager {
         this.updateWaveInfo(victory ? 'All waves cleared.' : 'Your keep was overrun.');
         this.log(victory ? 'Final wave defeated.' : 'Game over.');
     }
-	/*deleteTower() {
-        if (!this.selectedTower) return;
-
-        const refund = this.selectedTower.sellValue;
-        this.gold += refund;
-        this.updateHUD();
-        
-        this.levelManager.removeTower(this.selectedTower);
-        
-        this.log(`${this.selectedTower.name} sold for ${refund}g!`);
-        this.selectedTower = null;
-        this.showSelectedTowerInfo();
-    }
-
-    showWaveAnnouncement(text) {
-        const wrap = document.getElementById('wave-announcement');
-        const t = document.getElementById('wave-text');
-        t.textContent = text;
-        wrap.classList.remove('hidden');
-        setTimeout(() => wrap.classList.add('hidden'), 1400);
-    }
-
-    updateWaveInfo(text) {
-        const box = document.getElementById('wave-info');
-        box.innerHTML = `<p>${text}</p>`;
-    }
-
-    log(msg) {
-        const box = document.getElementById('combat-log');
-        const p = document.createElement('p');
-        p.textContent = msg;
-        box.prepend(p);
-
-        while (box.childElementCount > 10) {
-            box.removeChild(box.lastElementChild);
-        }
-    }*/
 
     resetControlVisibility() {
         document.getElementById('btn-start').classList.remove('hidden');
