@@ -37,8 +37,19 @@ class GameManager {
 
         this.towerCatalog = [];
         this.enemyCatalog = [];
-        // Track which enemy instances have applied gate damage
+        // 4.3.1 và 4.3.2 ở nhánh quái chạm base làm tụt HP
         this._gateDamaged = new WeakSet();
+
+
+
+
+
+
+
+
+
+
+
 
         this.bindEvents();
         this.bindControls();
@@ -82,6 +93,14 @@ class GameManager {
 
         this.renderTowerShop();
     }
+	
+	
+	
+	
+	
+	
+	
+	
 
     /**
      * [UC-01 Bắt đầu trò chơi] Bước 1.1.6: Load map, khởi tạo Gold và HP.
